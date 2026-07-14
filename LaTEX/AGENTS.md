@@ -1,27 +1,45 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
+## Estrutura do projeto
 
-This repository currently uses `prompt.md` as the source specification for a Portuguese-language Zustand e-book. Generated book sources should live in `zustand-ebook/`: keep the root document in `main.tex`, shared packages and macros in `preamble.tex`, citations in `bibliography.bib`, and chapter text in `chapters/`. Number chapter files with a two-digit prefix, for example `chapters/03-react-hooks.tex`. Store diagrams and other artwork in `images/`, and complete React/TypeScript examples in `code/`. Do not commit generated LaTeX artifacts such as `.aux`, `.log`, `.toc`, or `.out` files.
+O livro principal está em `zustand-ebook/`. Use `main.tex` como documento raiz,
+`preamble.tex` para pacotes e comandos reutilizáveis e `ARQUITETURA.md` para o
+planejamento editorial. Os capítulos ficam em `chapters/`, numerados com dois
+dígitos, como `chapters/08-acoes-e-atualizacoes.tex`. Imagens e capas pertencem a
+`images/`; exemplos React/TypeScript ficam em `code/devpanel/chapters/NN/`.
+`latex-primeiro-livro/` é um projeto didático separado.
 
-## Build, Test, and Development Commands
+## Compilação e validação
 
-The e-book scaffold is not yet present. After it is created, run commands from `zustand-ebook/`:
+Execute os comandos dentro de `zustand-ebook/`:
 
-- `latexmk -pdf -shell-escape main.tex` builds the book and repeats LaTeX passes as needed. Shell escape is required when `minted` is enabled.
-- `latexmk -C` removes generated build files.
-- `pdflatex -shell-escape main.tex` performs a quick single-pass syntax check; use `latexmk` for the final document.
+- `latexmk -lualatex main.tex`: compila o PDF e repete as passagens necessárias.
+- `lualatex -interaction=nonstopmode -halt-on-error main.tex`: faz uma passagem
+  direta para diagnóstico.
+- `latexmk -C`: remove artefatos temporários de compilação.
+- `pdfinfo main.pdf`: confirma quantidade e dimensões das páginas.
 
-Install TeX Live packages and Pygments before compiling. If bibliography or index processing is not configured through `latexmk`, run the relevant `biber`/`bibtex` and `makeindex` steps explicitly.
+O documento deve permanecer em A5 (aproximadamente `419.5 x 595.3 pt`). Antes de
+entregar, verifique no `main.log` erros, referências indefinidas e caixas
+`Overfull`. Revise visualmente capas, fólios, margens de segurança e exercícios.
 
-## Writing Style & Naming Conventions
+## Redação e convenções
 
-Write explanatory prose in Brazilian Portuguese and keep technical identifiers in their canonical English form. Use two spaces for indentation inside LaTeX environments. Put reusable formatting in `preamble.tex` instead of redefining it in chapters. Prefer semantic labels such as `\label{sec:context-api}`, `\label{fig:store-flow}`, and `\label{lst:basic-store}`. Code samples must target React 19, TypeScript, Vite, Zustand, ESLint, and Prettier, and should be complete enough to compile independently.
+Escreva em português brasileiro, com tom profissional e exemplos progressivos do
+DevPanel. Use dois espaços dentro de ambientes LaTeX. Preserve identificadores
+técnicos em inglês e nomes semânticos, como `useInviteStore` e `closeInvite`.
+Todo capítulo deve avançar a narrativa, explicar decisões, apresentar código,
+propor uma tarefa com espaço de resposta e terminar com um resumo.
 
-## Testing Guidelines
+Use `\capitulocapa{images/cap-N.png}{Título}` para a abertura. Enquanto uma arte
+interna não existir, use `\ilustracaopendente{nome}{descrição detalhada da cena}`.
+Não referencie imagens ausentes. Os arquivos em `code/` são material de
+referência; não crie projetos Vite independentes nem instale dependências apenas
+para testar trechos do livro.
 
-Treat a warning-free PDF build as the baseline test. Check unresolved references, missing citations, overfull boxes, broken links, and absent images in the build log. Compile or type-check examples under `code/` when their supporting project configuration exists. Every chapter should include an introduction, practical examples, exercises at three difficulty levels, a summary, and a mini-project challenge.
+## Commits e pull requests
 
-## Commit & Pull Request Guidelines
-
-No commit history currently defines a convention. Use short, imperative subjects with an optional scope, such as `docs: draft introduction chapter` or `latex: configure index`. Keep commits focused. Pull requests should describe affected chapters, report the build command and result, link relevant issues, and include screenshots or PDF page references for visual layout changes.
+Faça commits pequenos, com assunto imperativo e escopo opcional, por exemplo
+`docs: inicia capítulo 8` ou `latex: ajusta margens das capas`. Não inclua
+artefatos temporários ignorados. Pull requests devem indicar capítulos afetados,
+resultado da compilação e páginas que exigem revisão visual.
