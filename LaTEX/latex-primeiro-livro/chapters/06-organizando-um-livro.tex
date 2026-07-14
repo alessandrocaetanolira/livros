@@ -1,0 +1,64 @@
+\chapter{Organizando um livro}
+\label{chap:organizacao}
+
+\section{Dividir para manter}
+
+Um único arquivo funciona para exemplos curtos, mas dificulta a navegação em um
+livro. Mantenha a configuração em \arquivo{preamble.tex}, cada capítulo em
+\arquivo{chapters/} e deixe \arquivo{main.tex} mostrar a ordem geral:
+
+\begin{lstlisting}[language=LaTeXBook]
+\documentclass{book}
+\input{preamble}
+
+\begin{document}
+\frontmatter
+\tableofcontents
+
+\mainmatter
+\include{chapters/01-introducao}
+\include{chapters/02-fundamentos}
+
+\backmatter
+\bibliography{bibliography}
+\end{document}
+\end{lstlisting}
+
+\comando{input} insere um arquivo no ponto atual. \comando{include} também o
+insere, mas inicia uma página e mantém arquivos auxiliares separados, comportamento
+conveniente para capítulos. Durante a escrita, \comando{includeonly} compila
+apenas partes selecionadas sem perder a numeração conhecida:
+
+\begin{lstlisting}[language=LaTeXBook]
+\includeonly{chapters/02-fundamentos}
+\end{lstlisting}
+
+\section{Partes de um livro}
+
+A classe \arquivo{book} distingue três regiões. \comando{frontmatter} usa
+numeração romana e recebe capa, apresentação e sumário. \comando{mainmatter}
+inicia capítulos e numeração arábica. \comando{backmatter} recebe apêndices,
+bibliografia e índice.
+
+Uma capa simples pode ser construída com \arquivo{titlepage}. Para páginas sem
+numeração visível, use \comando{thispagestyle\{empty\}}. Não tente aperfeiçoar a
+capa antes de haver conteúdo suficiente: tipografia e proporções são mais fáceis
+de avaliar quando o livro já possui páginas reais.
+
+\section{Convenções de projeto}
+
+Adote nomes previsíveis: \arquivo{01-introducao.tex},
+\arquivo{02-fundamentos.tex} e assim por diante. Use letras minúsculas, hífens e
+evite espaços. Guarde apenas fontes editáveis no controle de versão; arquivos
+\arquivo{.aux}, logs e PDFs gerados entram no \arquivo{.gitignore}.
+
+Cada capítulo deve ter uma finalidade clara. Um modelo simples inclui abertura,
+conceitos, exemplo, prática e síntese. A repetição dessa estrutura dá ritmo ao
+livro e deixa lacunas evidentes durante a revisão.
+
+\begin{pratica}
+  Transforme seu documento em um projeto com \arquivo{main.tex},
+  \arquivo{preamble.tex} e dois arquivos em \arquivo{chapters/}. Confirme que o
+  PDF continua igual e teste \comando{includeonly}.
+\end{pratica}
+

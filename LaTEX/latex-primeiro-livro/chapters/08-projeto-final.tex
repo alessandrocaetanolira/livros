@@ -1,0 +1,75 @@
+\chapter{Projeto final: seu primeiro livro}
+\label{chap:projeto-final}
+
+Chegou a hora de transformar as técnicas anteriores num projeto autoral. Use o
+modelo da pasta \arquivo{examples/} como ponto de partida ou copie este próprio
+projeto e remova o conteúdo didático.
+
+\section{Etapa 1: definir o livro}
+
+Antes do LaTeX, escreva uma frase para cada item:
+
+\begin{itemize}
+  \item tema e transformação prometida ao leitor;
+  \item público e conhecimento prévio necessário;
+  \item entre cinco e dez capítulos, cada um com um resultado observável;
+  \item exemplos, imagens ou fontes de pesquisa necessários.
+\end{itemize}
+
+Um sumário provisório é uma hipótese, não um contrato. Ele pode mudar quando a
+escrita revelar uma ordem mais clara.
+
+\section{Etapa 2: montar a estrutura}
+
+Crie \arquivo{main.tex}, \arquivo{preamble.tex}, \arquivo{bibliography.bib} e as
+pastas \arquivo{chapters/} e \arquivo{images/}. Faça um arquivo por capítulo e
+adicione todos ao principal com \comando{include}. Compile enquanto os capítulos
+ainda contêm apenas títulos. Assim, problemas de infraestrutura são resolvidos
+antes de se misturarem a centenas de páginas.
+
+\section{Etapa 3: escolher a identidade visual}
+
+Defina uma fonte de leitura, uma fonte de títulos e uma fonte monoespaçada se
+houver código. Escolha uma cor principal e uma cor de destaque. Teste uma página
+com título, parágrafos, lista, negrito e itálico. Priorize legibilidade; efeitos
+visuais devem apoiar a hierarquia, não competir com o conteúdo.
+
+\section{Etapa 4: escrever e revisar}
+
+Produza primeiro uma versão completa, mesmo imperfeita. Depois faça revisões
+separadas:
+
+\begin{enumerate}
+  \item \textbf{estrutura}: ordem e objetivo de cada capítulo;
+  \item \textbf{conteúdo}: precisão, exemplos e lacunas;
+  \item \textbf{linguagem}: clareza, repetição e terminologia;
+  \item \textbf{visual}: quebras, figuras, tabelas e consistência;
+  \item \textbf{técnica}: log limpo, links, citações e índice.
+\end{enumerate}
+
+\section{Lista de verificação}
+
+Seu primeiro livro está pronto para uma versão de leitura quando:
+
+\begin{itemize}
+  \item compila do zero com um único comando;
+  \item não possui referências ou citações indefinidas;
+  \item explica a quem se destina e como deve ser usado;
+  \item mantém títulos, exemplos e termos consistentes;
+  \item possui fontes e imagens com licenças adequadas;
+  \item foi lido no PDF, não apenas no código-fonte;
+  \item foi testado por pelo menos uma pessoa do público pretendido.
+\end{itemize}
+
+\begin{resultado}
+  Ao concluir essas etapas, você terá um livro modular, compilável e preparado
+  para crescer. Mais importante: saberá localizar cada decisão editorial no
+  código e poderá alterá-la sem refazer o documento inteiro.
+\end{resultado}
+
+\section*{Próximos passos}
+
+Explore a documentação oficial do projeto LaTeX \citep{latex-project} à medida
+que surgirem necessidades concretas. Aprender pacotes sob demanda é mais
+eficiente do que tentar memorizar o ecossistema. Seu primeiro livro não precisa
+usar todos os recursos; precisa servir bem ao leitor.

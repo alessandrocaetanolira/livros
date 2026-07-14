@@ -1,0 +1,262 @@
+\usepackage{fontspec}
+\usepackage[brazil]{babel}
+\usepackage{microtype}
+
+% Formato físico obrigatório: ISO A5, 148 × 210 mm.
+% Margens espelhadas consideram encadernação e leitura em páginas opostas.
+\usepackage[
+  paperwidth=148mm,
+  paperheight=210mm,
+  inner=18mm,
+  outer=14mm,
+  top=16mm,
+  bottom=18mm,
+  bindingoffset=3mm,
+  headheight=13pt,
+  headsep=5mm,
+  footskip=9mm
+]{geometry}
+
+\usepackage{graphicx}
+\usepackage{eso-pic}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{amsmath}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{natbib}
+\usepackage{makeidx}
+\usepackage{hyperref}
+
+% Fontes presentes no TeX Live e adequadas a uma mancha de texto A5.
+\setmainfont{TeX Gyre Pagella}
+\setsansfont{TeX Gyre Heros}
+\setmonofont{TeX Gyre Cursor}
+\setlength{\emergencystretch}{1em}
+
+\definecolor{ZustandBrown}{HTML}{433E38}
+\definecolor{ZustandGold}{HTML}{D4A24C}
+\definecolor{ZustandCream}{HTML}{F6F0E5}
+\definecolor{CoverBlue}{HTML}{003A70}
+\definecolor{CodeBackground}{HTML}{F5F5F3}
+\definecolor{CodeGreen}{HTML}{356859}
+\definecolor{CodePurple}{HTML}{704A8A}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=ZustandBrown,
+  citecolor=CodeGreen,
+  urlcolor=MidnightBlue,
+  pdftitle={Estado sem Drama},
+  pdfsubject={Zustand e decisões de estado para times pequenos}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\scriptsize\nouppercase{\leftmark}}
+\fancyhead[RO]{\scriptsize\nouppercase{\rightmark}}
+\fancyfoot[LE]{\sffamily\small\thepage}
+\fancyfoot[RO]{\sffamily\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Páginas de abertura de partes, sumário e capítulos não ilustrados.
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[LE]{\sffamily\small\thepage}
+  \fancyfoot[RO]{\sffamily\small\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+% Capas ilustradas exibem somente o fólio real, fora da área da arte.
+\fancypagestyle{chaptercover}{%
+  \fancyhf{}
+  \fancyfoot[LE]{\sffamily\small\thepage}
+  \fancyfoot[RO]{\sffamily\small\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+\titleformat{\chapter}[display]
+  {\sffamily\bfseries\color{ZustandBrown}}
+  {\filleft\large\chaptername\ \thechapter}
+  {0.7ex}
+  {\titlerule\vspace{1ex}\fontsize{23}{26}\selectfont}
+\titlespacing*{\chapter}{0pt}{-4mm}{9mm}
+\titleformat{\section}
+  {\sffamily\bfseries\large\color{ZustandBrown}}
+  {\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{3.2ex plus 0.8ex}{1.2ex}
+
+\captionsetup{
+  font=small,
+  labelfont={bf,sf,color=ZustandBrown},
+  width=0.92\textwidth
+}
+
+\lstdefinelanguage{TypeScript}{
+  keywords={const,let,function,return,export,import,from,type,interface,extends,
+    async,await,if,else,true,false,undefined,string,number,boolean},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]"
+}
+\lstset{
+  language=TypeScript,
+  basicstyle=\ttfamily\fontsize{7.2}{8.7}\selectfont,
+  backgroundcolor=\color{CodeBackground},
+  keywordstyle=\color{CodePurple}\bfseries,
+  commentstyle=\color{CodeGreen}\itshape,
+  stringstyle=\color{BrickRed},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=5pt,
+  frame=single,
+  rulecolor=\color{gray!30},
+  framesep=4pt,
+  xleftmargin=2mm,
+  xrightmargin=1mm,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  showstringspaces=false,
+  tabsize=2,
+  captionpos=b
+}
+
+\newtcolorbox{historia}[1][]{
+  breakable,colback=ZustandCream,colframe=ZustandGold!80!black,
+  fonttitle=\sffamily\bfseries,title=Do dia a dia,#1
+}
+\newtcolorbox{decisao}[1][]{
+  breakable,colback=blue!3,colframe=ZustandBrown,
+  fonttitle=\sffamily\bfseries,title=Decisão de arquitetura,#1
+}
+\newtcolorbox{tarefa}[1][]{
+  breakable,colback=green!3,colframe=CodeGreen,
+  fonttitle=\sffamily\bfseries,title=Chegou uma tarefa,#1
+}
+\newtcolorbox{resumo}[1][]{
+  colback=gray!4,colframe=ZustandBrown,
+  fonttitle=\sffamily\bfseries,title=O que levamos deste capítulo,#1
+}
+
+% Área pautada para exercícios impressos, inspirada em um editor de código.
+\newcommand{\espacoresposta}[1]{%
+  \begin{tcolorbox}[
+    enhanced,
+    colback=CodeBackground,
+    colframe=gray!45,
+    boxrule=0.5pt,
+    arc=1mm,
+    left=2mm,
+    right=2mm,
+    top=2mm,
+    bottom=1mm,
+    title={\textcolor{BrickRed}{\textbullet}\enspace
+      \textcolor{ZustandGold}{\textbullet}\enspace
+      \textcolor{CodeGreen}{\textbullet}\hfill
+      \textcolor{gray!75}{\scriptsize resposta.md}},
+    coltitle=gray!75,
+    colbacktitle=gray!12,
+    fonttitle=\ttfamily\scriptsize,
+    titlerule=0.3pt
+  ]
+    \foreach \n in {1,...,#1}{%
+      \noindent
+      \makebox[6mm][r]{\ttfamily\scriptsize\color{gray!70}\n}%
+      \hspace{2mm}%
+      \textcolor{gray!38}{\rule[-0.8mm]{\dimexpr\linewidth-11mm\relax}{0.3pt}}%
+      \par\vspace{2.8mm}%
+    }%
+  \end{tcolorbox}%
+}
+
+% Aceita primeiro PDF e depois PNG. Só chamar quando a imagem existir.
+\newcommand{\imagemcapitulo}[3]{%
+  \begin{figure}[htbp]
+    \centering
+    \IfFileExists{images/#1.pdf}{%
+      \includegraphics[width=\linewidth]{images/#1.pdf}%
+    }{%
+      \includegraphics[width=\linewidth]{images/#1.png}%
+    }
+    \caption{#2}
+    \label{fig:#3}
+  \end{figure}%
+}
+
+% Marcador editorial usado enquanto a arte ainda não foi adicionada.
+\newcommand{\ilustracaopendente}[2]{%
+  \begin{figure}[htbp]
+    \centering
+    \begin{tcolorbox}[
+      width=\linewidth,
+      colback=gray!4,
+      colframe=gray!45,
+      boxrule=0.5pt,
+      arc=1mm
+    ]
+      \centering
+      {\sffamily\bfseries Ilustração planejada\par}
+      \vspace{1mm}
+      {\small #2\par}
+      \vspace{1mm}
+      {\scriptsize\ttfamily images/#1.pdf ou images/#1.png\par}
+    \end{tcolorbox}
+  \end{figure}%
+}
+
+% Página de abertura ilustrada. A arte fica dentro da zona segura de impressão:
+% 12 mm no lado interno, 8 mm no externo, 14 mm abaixo e mais de 10 mm acima.
+% A faixa inferior original é recortada para remover fólio e título incorporados.
+\newcommand{\capitulocapa}[3][0]{%
+  \cleardoublepage
+  \refstepcounter{chapter}%
+  \phantomsection
+  \addcontentsline{toc}{chapter}{\protect\numberline{\thechapter}#3}%
+  \chaptermark{#3}%
+  \thispagestyle{chaptercover}%
+  \AddToShipoutPictureBG*{%
+    \AtPageLowerLeft{%
+      \put(\LenToUnit{12mm},\LenToUnit{14mm}){%
+        \includegraphics[
+          width=128mm,
+          height=182mm,
+          keepaspectratio,
+          trim=0 #1bp 0 0,
+          clip
+        ]{#2}%
+      }%
+    }%
+  }%
+  \null
+  \clearpage
+}
+
+% Capa geral: fundo até o corte e arte reduzida para preservar a zona segura.
+\newcommand{\livrocapa}[1]{%
+  \begin{titlepage}
+    \thispagestyle{empty}%
+    \AddToShipoutPictureBG*{%
+      \AtPageLowerLeft{\color{CoverBlue}\rule{\paperwidth}{\paperheight}}%
+      \AtPageLowerLeft{%
+        \put(0,\LenToUnit{4mm}){%
+          \makebox[\paperwidth][c]{\includegraphics[height=202mm]{#1}}%
+        }%
+      }%
+    }%
+    \null
+  \end{titlepage}%
+}
+
+\newcommand{\arquivo}[1]{\texttt{#1}}
+\newcommand{\codigo}[1]{\texttt{#1}}
+\makeindex

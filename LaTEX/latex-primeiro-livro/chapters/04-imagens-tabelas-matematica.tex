@@ -1,0 +1,81 @@
+\chapter{Imagens, tabelas e matemática}
+\label{chap:elementos}
+
+\section{Figuras}
+
+O pacote \arquivo{graphicx} fornece \comando{includegraphics}. Coloque imagens
+em uma pasta própria e use o ambiente \arquivo{figure} para legenda, numeração e
+referência:
+
+\begin{lstlisting}[language=LaTeXBook]
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.75\textwidth]{images/diagrama.pdf}
+  \caption{Fluxo de producao do livro.}
+  \label{fig:fluxo}
+\end{figure}
+\end{lstlisting}
+
+As letras \arquivo{htbp} indicam posições preferidas: aqui, topo, base ou página
+de figuras. São sugestões, pois LaTeX escolhe uma posição que preserve a boa
+composição da página. Use PDF para desenhos vetoriais e PNG ou JPEG para imagens
+fotográficas. Evite capturas de tela de texto quando o conteúdo puder ser
+escrito diretamente.
+
+\section{Tabelas}
+
+O ambiente \arquivo{table} fornece legenda; \arquivo{tabular} organiza células.
+O pacote \arquivo{booktabs} cria linhas com proporções profissionais:
+
+\begin{lstlisting}[language=LaTeXBook]
+\begin{table}[htbp]
+  \centering
+  \caption{Classes comuns de documento.}
+  \label{tab:classes}
+  \begin{tabular}{ll}
+    \toprule
+    Classe & Uso principal \\
+    \midrule
+    article & textos curtos \\
+    report  & relatorios longos \\
+    book    & livros com capitulos \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+\end{lstlisting}
+
+Em \verb|{ll}|, cada letra representa uma coluna alinhada à esquerda. Use
+\arquivo{c} para centralizar e \arquivo{r} para alinhar à direita. Não use linhas
+verticais sem necessidade: espaço e alinhamento geralmente separam melhor os
+dados.
+
+\section{Expressões matemáticas}
+
+Matemática curta pode aparecer no parágrafo, como $E=mc^2$. Expressões que
+merecem destaque usam um ambiente próprio:
+
+\begin{lstlisting}[language=LaTeXBook]
+\begin{equation}
+  a^2 + b^2 = c^2
+  \label{eq:pitagoras}
+\end{equation}
+\end{lstlisting}
+
+O pacote \arquivo{amsmath} acrescenta ambientes para alinhar várias expressões:
+
+\begin{lstlisting}[language=LaTeXBook]
+\begin{align}
+  x + y &= 10 \\
+  x - y &= 2
+\end{align}
+\end{lstlisting}
+
+O símbolo \verb|&| marca o ponto de alinhamento. Não use modo matemático apenas
+para obter itálico; isso altera espaçamento e significado dos caracteres.
+
+\begin{pratica}
+  Adicione ao seu documento uma imagem com legenda, uma tabela de três linhas e
+  uma equação numerada. Crie rótulos e cite os três elementos no texto com
+  \comando{ref}.
+\end{pratica}
+

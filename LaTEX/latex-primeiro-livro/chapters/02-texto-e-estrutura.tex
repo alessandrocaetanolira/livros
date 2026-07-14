@@ -1,0 +1,88 @@
+\chapter{Texto e estrutura}
+\label{chap:texto-estrutura}
+
+\section{Parágrafos e ênfase}
+
+No código-fonte, uma quebra de linha comum equivale a um espaço. Uma linha vazia
+inicia outro parágrafo. Deixe o LaTeX decidir onde quebrar as linhas; isso mantém
+o texto adaptável quando margens ou fontes mudarem.
+
+Use comandos semânticos para destacar conteúdo:
+
+\begin{lstlisting}[language=LaTeXBook]
+Este termo e \emph{importante}.
+Este trecho esta em \textbf{negrito}.
+O comando \LaTeX produz o logotipo do sistema.
+\end{lstlisting}
+
+Evite usar negrito e tamanho manual para simular títulos. Os comandos de seção
+registram a hierarquia, controlam a numeração e alimentam o sumário automático.
+
+\section{Capítulos, seções e sumário}
+
+A classe \arquivo{book} oferece capítulos. Uma estrutura inicial pode ser:
+
+\begin{lstlisting}[language=LaTeXBook]
+\documentclass{book}
+\begin{document}
+\tableofcontents
+\chapter{Introducao}
+\section{O problema}
+\subsection{Contexto historico}
+\chapter{Desenvolvimento}
+\end{document}
+\end{lstlisting}
+
+O sumário pode aparecer vazio na primeira compilação. LaTeX grava os títulos em
+um arquivo auxiliar e os lê na passagem seguinte. \arquivo{latexmk} cuida disso
+automaticamente.
+
+Use a hierarquia com intenção. Um capítulo trata de um grande assunto; uma seção
+organiza uma etapa desse assunto; uma subseção detalha um aspecto. Muitos níveis
+produzem um texto fragmentado e difícil de navegar.
+
+\section{Listas e notas}
+
+Listas não numeradas usam \arquivo{itemize}; sequências usam
+\arquivo{enumerate}:
+
+\begin{lstlisting}[language=LaTeXBook]
+\begin{itemize}
+  \item Planejar o conteudo.
+  \item Escrever o primeiro rascunho.
+  \item Revisar e compilar.
+\end{itemize}
+
+\begin{enumerate}
+  \item Criar a pasta.
+  \item Criar o arquivo principal.
+  \item Gerar o PDF.
+\end{enumerate}
+\end{lstlisting}
+
+Notas de rodapé são inseridas no próprio ponto da chamada com
+\comando{footnote\{Texto da nota.\}}. Use-as para observações complementares,
+não para esconder explicações essenciais.
+
+\section{Rótulos e referências cruzadas}
+
+Nunca digite manualmente ``veja o capítulo 3''. A numeração pode mudar. Coloque
+um rótulo após o elemento e use \comando{ref}:
+
+\begin{lstlisting}[language=LaTeXBook]
+\chapter{Metodos}
+\label{chap:metodos}
+
+Como veremos no Capitulo~\ref{chap:metodos}, ...
+\end{lstlisting}
+
+O caractere \verb|~| cria um espaço que não permite quebra entre a palavra e o
+número. Prefixos como \arquivo{chap:}, \arquivo{sec:}, \arquivo{fig:} e
+\arquivo{tab:} ajudam a reconhecer cada tipo de rótulo.
+
+\begin{pratica}
+  Crie dois capítulos com duas seções cada. Insira um sumário e faça o segundo
+  capítulo referenciar uma seção do primeiro. Depois, inverta a ordem dos
+  capítulos e confirme que a referência se atualiza.
+\end{pratica}
+

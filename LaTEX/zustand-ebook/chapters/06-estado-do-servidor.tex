@@ -1,0 +1,241 @@
+\capitulocapa{images/cap-6.png}{Todo dado pertence ao cliente?}
+\label{chap:estado-do-servidor}
+
+\section{A lista que nunca estava realmente pronta}
+
+\begin{historia}
+O DevPanel ganhou uma tela de usuários. Na primeira versão, a página fazia uma
+requisição ao abrir, guardava o resultado em estado local e exibia uma mensagem
+de carregamento.
+
+Pouco depois, a mesma lista apareceu no seletor do modal de convite. A equipe
+moveu os usuários para uma store do Zustand e considerou o problema resolvido.
+Então surgiram perguntas difíceis: quando buscar novamente? O que acontece se
+duas telas solicitarem a lista juntas? Como saber se o conteúdo ainda representa
+o servidor? Quem limpa o erro antigo antes de uma nova tentativa?
+
+A lista estava compartilhada, mas continuava sem uma política de sincronização.
+\end{historia}
+
+\ilustracaopendente{6-1-lista-desatualizada}{Cena no DevPanel: duas pessoas
+comparam a página de Usuários com o modal de convite aberto ao lado. Os dois
+lugares exibem quantidades diferentes de usuários, enquanto uma terceira pessoa
+aponta para a API no quadro e pergunta qual versão é a atual. Mostrar que ambas
+as telas leram cópias locais em momentos diferentes.}
+
+Compartilhar o resultado de uma requisição não transforma esse resultado em
+estado do cliente. Antes de escolher onde guardar um dado, precisamos perguntar
+quem é seu verdadeiro proprietário.
+
+\section{Quem pode alterar a fonte de verdade?}
+
+O tema do DevPanel pertence ao cliente. Ele muda quando uma pessoa usa o botão e
+a aplicação conhece imediatamente o novo valor. Podemos modelar essa mudança com
+uma ação da store.
+
+A lista de usuários pertence ao servidor. Outra pessoa, uma rotina administrativa
+ou um serviço externo pode alterá-la sem que a aba aberta seja avisada. A cópia
+no navegador é apenas uma fotografia obtida em determinado momento.
+
+Essa diferença produz responsabilidades próprias:
+
+\begin{itemize}
+  \item iniciar e repetir requisições;
+  \item representar carregamento e falha;
+  \item reutilizar respostas já obtidas;
+  \item decidir quando uma resposta ficou desatualizada;
+  \item sincronizar novamente em momentos apropriados;
+  \item evitar requisições idênticas concorrentes.
+\end{itemize}
+
+Podemos programar tudo isso em Zustand, mas estaríamos construindo um gerenciador
+de consultas dentro de um gerenciador de estado do cliente.
+
+\section{A solução manual e seu custo}
+
+Uma implementação habitual guarda a lista em \codigo{users} e mantém indicadores
+separados para carregamento e erro. Uma ação \codigo{fetchUsers} faz a busca; o
+componente a chama em um efeito e renderiza conforme essas parcelas.
+
+O código parece pequeno até precisarmos distinguir situações diferentes. A
+primeira carga não possui dados para mostrar; uma atualização posterior pode
+manter a lista visível enquanto busca uma versão nova. Um erro inicial bloqueia
+a tela; um erro durante a atualização pode preservar a resposta anterior.
+
+Também precisamos controlar chamadas duplicadas, descarte de respostas antigas
+e tempo de validade. Esses não são detalhes específicos da regra de usuários.
+São problemas recorrentes de qualquer consulta remota.
+
+\begin{decisao}
+Zustand continua sendo uma boa escolha para estado do cliente compartilhado. Uma
+ferramenta de consultas é mais adequada quando o problema central é manter uma
+cópia local sincronizada com uma fonte remota.
+\end{decisao}
+
+\section{A primeira consulta com TanStack Query}
+
+TanStack Query organiza requisições por chaves e mantém um cache associado a
+elas. Primeiro, conectamos um \codigo{QueryClient} à aplicação:
+
+\begin{lstlisting}[caption={Cliente de consultas na raiz da aplicação.}]
+import {
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
+
+const queryClient = new QueryClient()
+
+export function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppRoutes />
+    </QueryClientProvider>
+  )
+}
+\end{lstlisting}
+
+O Provider não transforma TanStack Query em substituto para Context ou Zustand.
+Ele disponibiliza a mesma instância de cache para os componentes consumidores.
+O dado continua vindo da API.
+
+A função da requisição fica separada da interface:
+
+\begin{lstlisting}[caption={Função responsável por buscar usuários.}]
+export type User = {
+  id: string
+  name: string
+  email: string
+}
+
+export async function getUsers(): Promise<User[]> {
+  const response = await fetch('/api/users')
+
+  if (!response.ok) {
+    throw new Error('Nao foi possivel carregar os usuarios')
+  }
+
+  return response.json()
+}
+\end{lstlisting}
+
+É importante lançar um erro quando a resposta HTTP não for bem-sucedida. O
+\codigo{fetch} não rejeita automaticamente a Promise apenas por receber, por
+exemplo, um status 500.
+
+\section{Chave, função e estados da consulta}
+
+Na página, \codigo{useQuery} conecta a interface ao cache:
+
+\begin{lstlisting}[caption={Lista de usuários consumindo uma consulta.}]
+export function UsersPage() {
+  const usersQuery = useQuery({
+    queryKey: ['users'],
+    queryFn: getUsers,
+    staleTime: 60_000,
+  })
+
+  if (usersQuery.isPending) return <p>Carregando...</p>
+  if (usersQuery.isError) return <p>{usersQuery.error.message}</p>
+
+  return (
+    <ul>
+      {usersQuery.data.map((user) => (
+        <li key={user.id}>{user.name}</li>
+      ))}
+    </ul>
+  )
+}
+\end{lstlisting}
+
+A chave \codigo{['users']} identifica a consulta. Componentes que usam a mesma
+chave observam a mesma entrada do cache. A função explica como obter o dado. Já
+\codigo{staleTime} informa por quanto tempo a resposta será considerada fresca;
+isso não é o mesmo que apagar o cache depois de um minuto.
+
+\codigo{isPending} representa a ausência de uma primeira resposta. Em uma
+atualização posterior, pode haver dados disponíveis enquanto
+\codigo{isFetching} indica atividade em segundo plano. Separar essas situações
+evita substituir uma lista útil por uma tela vazia a cada sincronização.
+
+\ilustracaopendente{6-2-fluxo-query-cache}{Diagrama com API à esquerda, cache do
+TanStack Query no centro e página de Usuários mais modal de convite à direita.
+A primeira tela solicita a chave ``users'', o cache busca a API e guarda a
+resposta; a segunda tela recebe a mesma entrada. Uma seta pontilhada representa
+uma atualização em segundo plano sem apagar a lista já exibida.}
+
+\section{Cache não significa dado eterno}
+
+Um cache guarda uma resposta para reutilização, mas ela pode ficar obsoleta. O
+tempo de frescor expressa quanto tempo aceitamos aquela fotografia sem solicitar
+outra automaticamente em determinados eventos.
+
+Os padrões da biblioteca são deliberadamente atentos à sincronização. Consultas
+sem um \codigo{staleTime} configurado são consideradas desatualizadas
+imediatamente e podem ser buscadas novamente quando um consumidor monta, a janela
+recupera o foco ou a rede reconecta. Ajustar esse comportamento exige conhecer a
+dinâmica do produto, não escolher um número arbitrário.
+
+Para usuários administrativos, um minuto pode ser razoável. Para permissões
+críticas, talvez seja necessário invalidar logo após uma alteração. Para uma
+tabela praticamente estática, um período maior reduz trabalho sem comprometer a
+experiência.
+
+\section{Zustand e TanStack Query lado a lado}
+
+As duas ferramentas podem coexistir porque resolvem responsabilidades distintas.
+
+\begin{itemize}
+  \item Zustand guarda tema, abertura de Drawer e filtros ainda não enviados.
+  \item TanStack Query guarda cópias de usuários, relatórios e outros recursos
+    obtidos do servidor.
+  \item O componente pode combinar as duas fontes sem copiar dados de uma para a
+    outra.
+\end{itemize}
+
+Evite receber \codigo{data} de uma consulta e copiá-la para uma store por meio de
+um efeito. Isso cria duas fontes locais de verdade e exige sincronização manual.
+Se a interface precisa transformar a lista, prefira derivar o resultado durante
+a leitura ou usar os recursos de seleção da própria consulta.
+
+\ilustracaopendente{6-3-cliente-servidor}{Quadro comparativo dividido ao meio.
+No lado ``estado do cliente'', mostrar tema, Drawer e rascunho de filtro ligados
+ao Zustand. No lado ``estado do servidor'', mostrar usuários e relatórios ligados
+ao cache do TanStack Query e à API. No centro, um componente do DevPanel combina
+as duas fontes sem duplicar os dados.}
+
+\section{Exercício: atualizar sem duplicar o carregamento}
+
+\begin{tarefa}
+Adicione à página de Usuários um botão ``Atualizar lista''. Enquanto a nova
+requisição estiver em andamento, mantenha a lista atual visível e altere apenas o
+texto do botão para ``Atualizando...''. Não crie outro estado de loading.
+\end{tarefa}
+
+Você pode chamar \codigo{refetch} devolvido pela consulta ou invalidar a chave
+\codigo{['users']} pelo \codigo{QueryClient}. Registre em seguida:
+
+\begin{enumerate}
+  \item quem é proprietário da lista;
+  \item qual chave identifica a consulta;
+  \item como a primeira carga difere da atualização;
+  \item por que a lista não foi copiada para Zustand;
+  \item qual evento do produto deveria invalidar esse cache.
+\end{enumerate}
+
+\espacoresposta{9}
+
+\begin{resumo}
+\begin{itemize}
+  \item Estado do servidor é uma cópia local de uma fonte remota.
+  \item Uma consulta precisa representar cache, erro, carregamento e
+    sincronização.
+  \item A chave identifica e permite reutilizar uma entrada do cache.
+  \item \codigo{isPending} e \codigo{isFetching} descrevem momentos diferentes.
+  \item \codigo{staleTime} define frescor, não a remoção imediata do dado.
+  \item Zustand e TanStack Query podem coexistir sem duplicar responsabilidades.
+\end{itemize}
+\end{resumo}
+
+Escolher uma store começa por classificar a natureza do dado. No próximo
+capítulo, voltaremos ao estado do cliente para construir uma store do Zustand a
+partir de um contrato pequeno e explícito.

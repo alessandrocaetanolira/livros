@@ -1,0 +1,55 @@
+% !TeX program = lualatex
+\documentclass[10pt,twoside,openright]{book}
+
+\input{preamble}
+
+\title{Estado sem Drama}
+\author{Zustand e decisões de estado para times pequenos}
+\date{\today}
+
+\begin{document}
+
+\frontmatter
+\livrocapa{images/capa.png}
+
+\chapter*{Nota de arquitetura}
+\addcontentsline{toc}{chapter}{Nota de arquitetura}
+O livro está na fase de arquitetura editorial. A jornada completa, a evolução
+do DevPanel, os exercícios e as ilustrações planejadas estão documentados em
+\texttt{ARQUITETURA.md}. Os capítulos serão incluídos neste arquivo à medida que
+forem escritos e revisados.
+
+\tableofcontents
+
+\mainmatter
+\part{Antes de escolher uma biblioteca}
+\include{chapters/01-o-que-e-estado}
+\include{chapters/02-limites-use-state}
+\include{chapters/03-compartilhar-estado}
+\include{chapters/04-context-api}
+\part{A necessidade do Zustand}
+\include{chapters/05-conhecendo-zustand}
+\include{chapters/06-estado-do-servidor}
+\include{chapters/07-primeiro-store}
+
+% Os demais capítulos serão ativados progressivamente durante a redação.
+% \include{chapters/08-acoes-e-atualizacoes}
+% \include{chapters/09-selectors-performance}
+% \include{chapters/10-persistencia}
+% \part{Um store que o time consegue manter}
+% \include{chapters/11-devtools}
+% \include{chapters/12-organizacao-stores}
+% \include{chapters/13-slices}
+% \include{chapters/14-stores-locais}
+% \include{chapters/15-testes}
+% \part{Decisões de produção}
+% \include{chapters/16-autenticacao}
+% \include{chapters/17-nextjs-ssr}
+% \include{chapters/18-arvore-decisao}
+
+% Ativar com \backmatter quando houver citações e termos indexados.
+% \bibliographystyle{plainnat}
+% \bibliography{bibliography}
+% \printindex
+
+\end{document}

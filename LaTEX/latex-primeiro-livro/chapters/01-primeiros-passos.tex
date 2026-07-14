@@ -1,0 +1,83 @@
+\chapter{Primeiros passos}
+\label{chap:primeiros-passos}
+
+\section{O que é LaTeX?}
+
+LaTeX é um sistema de preparação de documentos. Em vez de posicionar cada
+elemento visualmente, você escreve texto e comandos que descrevem sua função:
+isto é um título, aquilo é uma seção, esta frase merece ênfase. O mecanismo de
+compilação interpreta o arquivo-fonte e produz um PDF consistente.
+
+Essa separação entre conteúdo e apresentação é especialmente útil em livros,
+artigos, trabalhos acadêmicos e documentos técnicos. Num projeto longo, mudar a
+aparência de todos os capítulos deixa de ser uma tarefa manual: altera-se uma
+regra compartilhada. LaTeX\index{LaTeX} também automatiza sumário, numeração, referências
+cruzadas, bibliografia e índice remissivo \citep{lamport1994}.
+
+Os arquivos de texto normalmente terminam em \arquivo{.tex}. Eles podem ser
+editados no VS Code, TeXstudio, Overleaf ou qualquer editor de texto simples.
+Uma distribuição como TeX Live fornece o compilador e os pacotes.
+
+\section{Seu primeiro documento}
+
+Crie uma pasta chamada \arquivo{meu-livro} e, dentro dela, um arquivo
+\arquivo{main.tex} com este conteúdo:
+
+\begin{lstlisting}[language=LaTeXBook]
+\documentclass{article}
+
+\begin{document}
+Ola, LaTeX!
+\end{document}
+\end{lstlisting}
+
+A declaração \comando{documentclass\{article\}} escolhe a classe do documento.
+Ela define decisões básicas de layout e comandos disponíveis. O ambiente
+\arquivo{document} delimita o conteúdo que aparecerá no PDF. Tudo antes dele é
+o \emph{preâmbulo}, onde configuramos pacotes e opções.
+
+Compile no terminal:
+
+\begin{lstlisting}
+latexmk -lualatex main.tex
+\end{lstlisting}
+
+O arquivo \arquivo{main.pdf} deve surgir na mesma pasta. O comando
+\arquivo{latexmk} executa quantas passagens forem necessárias. A opção
+\arquivo{-lualatex} seleciona LuaLaTeX, mecanismo moderno com suporte direto a
+Unicode e fontes OpenType.
+
+\begin{atencao}
+  Não edite arquivos como \arquivo{.aux}, \arquivo{.log} ou \arquivo{.toc}.
+  Eles são gerados durante a compilação. Seu conteúdo pertence aos arquivos
+  \arquivo{.tex}.
+\end{atencao}
+
+\section{Comandos, argumentos e ambientes}
+
+Um comando começa com barra invertida. Argumentos obrigatórios aparecem entre
+chaves e opções aparecem entre colchetes:
+
+\begin{lstlisting}[language=LaTeXBook]
+\documentclass[11pt]{book}
+\end{lstlisting}
+
+Aqui, \arquivo{book} é obrigatório e \arquivo{11pt} é opcional. Ambientes têm
+início e fim explícitos, como \comando{begin\{document\}} e
+\comando{end\{document\}}. Se os nomes não coincidirem, a compilação falhará.
+
+Alguns caracteres possuem significado especial: \verb|%| inicia comentário;
+\verb|#| representa parâmetros de comandos; \verb|&| separa colunas. Para
+imprimi-los no texto, geralmente usamos uma barra: \verb|\%|, \verb|\#| e
+\verb|\&|.
+
+\begin{pratica}
+  Altere a classe para \arquivo{book}, acrescente a opção \arquivo{12pt} e
+  escreva dois parágrafos separados por uma linha vazia. Compile novamente e
+  observe o resultado.
+\end{pratica}
+
+\begin{resultado}
+  Você já consegue identificar preâmbulo, corpo, comando, argumento e ambiente,
+  além de transformar um arquivo-fonte em PDF.
+\end{resultado}

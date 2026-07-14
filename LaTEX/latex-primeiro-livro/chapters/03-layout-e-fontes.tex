@@ -1,0 +1,81 @@
+\chapter{Layout, pacotes e fontes}
+\label{chap:layout-fontes}
+
+\section{Estendendo LaTeX com pacotes}
+
+Pacotes adicionam recursos ao documento. Eles são carregados no preâmbulo por
+uma declaração própria. O pacote \arquivo{geometry}, por exemplo, configura
+papel e margens:
+
+\begin{lstlisting}[language=LaTeXBook]
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{graphicx} % inclusao de imagens
+\usepackage{xcolor}  % definicao de cores
+\usepackage{hyperref} % links no PDF
+\end{lstlisting}
+
+Carregue apenas o necessário e mantenha a configuração centralizada. Em um
+livro com vários capítulos, um arquivo \arquivo{preamble.tex} evita que cada
+capítulo redefina cores, margens e estilos.
+
+\section{Por que LuaLaTeX?}
+
+LuaLaTeX\index{LuaLaTeX} lê Unicode nativamente e, com \arquivo{fontspec}, usa fontes TrueType e
+OpenType do sistema. Isso facilita criar uma identidade visual sem converter
+arquivos de fonte para formatos antigos.
+
+\begin{lstlisting}[language=LaTeXBook]
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Pagella}
+\setsansfont{TeX Gyre Heros}
+\setmonofont{Latin Modern Mono}
+\end{lstlisting}
+
+A fonte principal atende ao texto corrido; a sem serifa é apropriada para
+títulos e elementos gráficos; a monoespaçada atende código. Para usar uma fonte
+instalada, substitua o nome, por exemplo:
+
+\begin{lstlisting}[language=LaTeXBook]
+\setmainfont{Libertinus Serif}
+\setsansfont{Source Sans 3}
+\setmonofont{JetBrains Mono}
+\end{lstlisting}
+
+Confira os nomes reconhecidos pelo sistema com \arquivo{fc-list} no Linux. Uma
+mensagem ``font not found'' normalmente indica nome incorreto ou fonte ausente.
+
+\section{Fontes armazenadas no projeto}
+
+Guardar arquivos licenciados para redistribuição numa pasta \arquivo{fonts/}
+torna o resultado reproduzível em outras máquinas:
+
+\begin{lstlisting}[language=LaTeXBook]
+\setmainfont[
+  Path=fonts/,
+  UprightFont=MinhaFonte-Regular.otf,
+  BoldFont=MinhaFonte-Bold.otf,
+  ItalicFont=MinhaFonte-Italic.otf
+]{MinhaFonte}
+\end{lstlisting}
+
+Verifique sempre a licença. Algumas fontes permitem uso no PDF, mas não a
+redistribuição do arquivo original.
+
+\section{Cores e comandos próprios}
+
+Nomes centralizados deixam alterações futuras mais seguras:
+
+\begin{lstlisting}[language=LaTeXBook]
+\definecolor{AzulLivro}{HTML}{183B56}
+\newcommand{\termo}[1]{\textbf{\color{AzulLivro}#1}}
+\end{lstlisting}
+
+Depois, \verb|\termo{tipografia}| aplica sempre o mesmo tratamento. Defina
+comandos pelo significado, não por uma aparência passageira. Um nome como
+\comando{termo} é mais durável que um nome baseado em cor e tamanho.
+
+\begin{pratica}
+  Escolha uma fonte para texto, outra para títulos e uma monoespaçada. Altere
+  uma cor e compile. Avalie legibilidade em parágrafos longos, itálico, negrito
+  e código antes de confirmar a combinação.
+\end{pratica}

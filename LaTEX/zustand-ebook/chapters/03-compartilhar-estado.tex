@@ -1,0 +1,339 @@
+\capitulocapa{images/cap-3.png}{Como compartilhar estado?}
+\label{chap:compartilhar-estado}
+
+\section{A solução apareceu no review}
+
+\begin{historia}
+Depois da tentativa do capítulo anterior, o pull request tinha propriedades
+criadas às pressas, um segundo estado no Perfil e um comentário nada animador:
+
+``Funciona, mas o Header virou dono de uma preferência usada pelo sistema
+inteiro.''
+
+Durante o review, alguém fez a pergunta certa:
+
+``E se o tema subir para o Layout, que já envolve o Header, a Sidebar e as
+páginas?''
+
+A mudança não exigia uma biblioteca. Exigia colocar a fonte de verdade num
+lugar compatível com quem precisava dela.
+\end{historia}
+
+No Capítulo~2, percebemos que o tema deixou de ser local. Agora vamos executar o
+primeiro movimento importante de arquitetura em React: elevar o estado para o
+ancestral comum.
+
+Essa solução é simples, explícita e frequentemente suficiente. Também possui um
+limite. Vamos atravessá-lo sem fingir que ele não existe.
+
+\section{O problema: componentes irmãos precisam concordar}
+
+O DevPanel possui uma estrutura parecida com esta:
+
+\begin{lstlisting}
+<AppLayout>
+  <Header />
+  <Sidebar />
+  <MainContent>
+    <ProfilePage />
+  </MainContent>
+</AppLayout>
+\end{lstlisting}
+
+O Header altera o tema. A Sidebar precisa exibir o tema atual. O Perfil também
+precisará conhecê-lo. Nenhum desses componentes é ancestral dos outros.
+
+Manter o estado no Header significa tentar enviar informação de um irmão para
+outro. React não oferece um caminho lateral para isso, e criar um caminho
+escondido normalmente resulta em DOM, variáveis de módulo ou eventos globais
+difíceis de rastrear.
+
+O caminho previsível é subir até o primeiro componente que contém todos os
+consumidores e, a partir dele, distribuir o valor para baixo.
+
+\ilustracaopendente{ch03-fluxo-fonte-unica}{O tema sobe do Header para o AppLayout e desce como propriedade para Header, Sidebar e conteúdo principal.}
+
+\section{Como normalmente resolvemos}
+
+Uma reação comum é colocar o estado no componente mais alto possível, muitas
+vezes no \codigo{App}. Isso funciona, mas pode transformar a raiz numa coleção
+de estados sem relação entre si: tema, modal, formulário, filtros, notificações
+e qualquer outra informação que alguém precisou compartilhar.
+
+O objetivo não é subir tudo para o topo. É subir apenas até o ancestral comum
+mais próximo.
+
+No DevPanel, esse lugar é \codigo{AppLayout}. Ele representa a região que contém
+o Header, a Sidebar e as páginas autenticadas. Uma tela de login fora desse
+Layout não precisa receber a preferência neste momento.
+
+\begin{decisao}
+Elevar estado não significa tornar estado global. Significa mover a fonte de
+verdade até a menor fronteira capaz de atender todos os consumidores atuais.
+\end{decisao}
+
+\section{Uma fonte de verdade no Layout}
+
+Movemos o tipo, o valor e a ação para \codigo{AppLayout}:
+
+\begin{lstlisting}[caption={O Layout passa a ser o dono do tema.},label={lst:theme-layout}]
+import { useState } from 'react'
+
+export type Theme = 'light' | 'dark'
+
+export function AppLayout() {
+  const [theme, setTheme] = useState<Theme>('light')
+
+  function toggleTheme() {
+    setTheme((current) => (current === 'light' ? 'dark' : 'light'))
+  }
+
+  return (
+    <div className={`app app--${theme}`}>
+      <Header theme={theme} onToggleTheme={toggleTheme} />
+      <Sidebar theme={theme} />
+      <MainContent />
+    </div>
+  )
+}
+\end{lstlisting}
+
+Agora o estado não depende da presença do Header. Enquanto o Layout existir, o
+tema existe. Header e Sidebar recebem a mesma fotografia do valor.
+
+\section{Implementação nos consumidores}
+
+O Header deixou de criar estado. Seu contrato mostra exatamente o que ele usa:
+
+\begin{lstlisting}[caption={O Header recebe valor e ação.}]
+type HeaderProps = {
+  theme: Theme
+  onToggleTheme: () => void
+}
+
+export function Header({ theme, onToggleTheme }: HeaderProps) {
+  return (
+    <header>
+      <span>Tema: {theme === 'light' ? 'claro' : 'escuro'}</span>
+      <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+    </header>
+  )
+}
+\end{lstlisting}
+
+A Sidebar precisa apenas ler:
+
+\begin{lstlisting}[caption={A Sidebar não recebe uma ação que não utiliza.}]
+type SidebarProps = {
+  theme: Theme
+}
+
+export function Sidebar({ theme }: SidebarProps) {
+  return (
+    <aside aria-label="Navegação principal">
+      <span>Tema atual: {theme === 'light' ? 'claro' : 'escuro'}</span>
+      <nav>{/* links do DevPanel */}</nav>
+    </aside>
+  )
+}
+\end{lstlisting}
+
+Essa diferença é importante. Receber o valor não deveria conceder permissão para
+alterá-lo. Passamos a ação somente a quem oferece aquela interação.
+
+\section{Entendendo o fluxo}
+
+Quando a pessoa seleciona ``Usar tema escuro'', a sequência é esta:
+
+\begin{enumerate}
+  \item \codigo{ThemeToggle} chama \codigo{onToggle};
+  \item o Header chama a ação recebida do Layout;
+  \item \codigo{toggleTheme} atualiza o estado no Layout;
+  \item o Layout renderiza novamente com \codigo{theme} igual a
+    \codigo{'dark'};
+  \item Header e Sidebar recebem o novo valor;
+  \item os dois representam o mesmo tema.
+\end{enumerate}
+
+Não existe sincronização entre Header e Sidebar. Existe uma fonte de verdade e
+dois consumidores. Essa distinção elimina a pergunta ``como manter os dois
+estados iguais?'': só há um estado.
+
+\subsection{Dados descem}
+
+O valor segue do proprietário para os filhos por propriedades. Cada componente
+consegue ler seu contrato e descobrir de onde a informação chega.
+
+\subsection{Eventos sobem}
+
+O botão não modifica diretamente o Layout. Ele comunica uma intenção por uma
+função recebida. A função é executada no componente que possui o estado.
+
+Esse fluxo unidirecional é previsível: dados descem, eventos sobem, uma nova
+renderização distribui o resultado.
+
+\section{Limitações: quando as props só estão de passagem}
+
+A solução começa a incomodar quando o Perfil, renderizado dentro de
+\codigo{MainContent}, também precisa do tema:
+
+\begin{lstlisting}
+<AppLayout>
+  <MainContent theme={theme}>
+    <RouteContent theme={theme}>
+      <ProfilePage theme={theme} />
+    </RouteContent>
+  </MainContent>
+</AppLayout>
+\end{lstlisting}
+
+Os componentes intermediários talvez não usem o tema. Ainda assim, seus
+contratos precisam aceitá-lo apenas para continuar o caminho. Isso é
+\emph{props drilling}: propriedades atravessando camadas intermediárias para
+alcançar um consumidor distante.
+
+\ilustracaopendente{ch03-arvore-props-drilling}{Árvore com AppLayout, MainContent, RouteContent e ProfilePage; o tema atravessa em destaque os intermediários que não o utilizam.}
+
+Props drilling não é automaticamente um erro. Duas ou três camadas numa árvore
+estável podem ser mais claras que adicionar outra abstração. O problema aparece
+quando o custo de transportar a informação começa a dominar os componentes.
+
+Alguns sinais:
+
+\begin{itemize}
+  \item componentes recebem propriedades que não leem;
+  \item mover uma tela exige reconstruir todo o caminho;
+  \item várias propriedades percorrem sempre as mesmas camadas;
+  \item componentes intermediários mudam por causa de uma demanda distante;
+  \item o contrato deixa de representar a responsabilidade real do componente.
+\end{itemize}
+
+\section{Uma solução melhor: Context API}
+
+Antes de buscar outro mecanismo, podemos tentar composição. Em vez de
+\codigo{MainContent} criar internamente toda a árvore, o Layout pode receber o
+conteúdo já montado. Outra opção é aproximar o componente que precisa do estado.
+
+Essas mudanças funcionam quando a estrutura é o verdadeiro problema. Quando a
+informação é transversal por natureza --- como tema, idioma ou sessão ---,
+reorganizar a árvore apenas para transportar props pode piorar o desenho.
+
+É aqui que Context API começa a fazer sentido. Não porque props sejam ruins, mas
+porque existe um valor transversal, muitos consumidores e intermediários sem
+interesse nele.
+
+Context permite que um Provider disponibilize um valor a qualquer descendente,
+sem obrigar todas as camadas intermediárias a recebê-lo. A fonte de verdade
+continua única; muda apenas o mecanismo de distribuição.
+
+\begin{lstlisting}[caption={O contexto descreve o contrato compartilhado.}]
+import { createContext, useContext } from 'react'
+
+type ThemeContextValue = {
+  theme: Theme
+  toggleTheme: () => void
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null)
+
+export function useTheme() {
+  const value = useContext(ThemeContext)
+
+  if (!value) {
+    throw new Error('useTheme precisa estar dentro de ThemeProvider')
+  }
+
+  return value
+}
+\end{lstlisting}
+
+O valor inicial é \codigo{null} porque não existe tema válido fora do Provider.
+O hook \codigo{useTheme} centraliza a leitura e produz um erro claro quando a
+árvore foi configurada incorretamente.
+
+\section{O Provider mantém a fonte de verdade}
+
+\begin{lstlisting}[caption={O Provider oferece valor e ação aos descendentes.}]
+type ThemeProviderProps = {
+  children: ReactNode
+}
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
+  const [theme, setTheme] = useState<Theme>('light')
+
+  function toggleTheme() {
+    setTheme((current) => (current === 'light' ? 'dark' : 'light'))
+  }
+
+  return (
+    <ThemeContext value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext>
+  )
+}
+\end{lstlisting}
+
+No React 19, o próprio contexto pode ser usado como Provider. O DevPanel envolve
+sua área autenticada uma única vez:
+
+\begin{lstlisting}
+<ThemeProvider>
+  <AppLayout />
+</ThemeProvider>
+\end{lstlisting}
+
+Agora Header, Sidebar e Perfil leem diretamente aquilo que utilizam:
+
+\begin{lstlisting}
+export function Sidebar() {
+  const { theme } = useTheme()
+
+  return <aside>Tema atual: {theme}</aside>
+}
+\end{lstlisting}
+
+\codigo{AppLayout} e \codigo{MainContent} deixam de transportar props. Eles não
+precisam conhecer uma preferência que não usam.
+
+\section{Exercício: remova o transporte}
+
+\begin{tarefa}
+Migre o tema compartilhado para \codigo{ThemeProvider}. Faça Header, Sidebar e
+Perfil usarem \codigo{useTheme} e remova de AppLayout e MainContent todas as
+propriedades que existiam apenas para transportar o tema.
+\end{tarefa}
+
+Depois de implementar, registre:
+
+\begin{enumerate}
+  \item quais propriedades puderam ser removidas;
+  \item quais componentes agora dependem de \codigo{ThemeProvider};
+  \item onde a fonte de verdade continua localizada;
+  \item o que aconteceria se um consumidor ficasse fora do Provider;
+  \item por que Context resolveu distribuição, mas não definiu as ações.
+\end{enumerate}
+
+\espacoresposta{9}
+
+Compare a versão final com a implementação por props. A nova versão deve reduzir
+o transporte sem esconder quem realmente consome o tema.
+
+\begin{resumo}
+\begin{itemize}
+  \item Componentes irmãos compartilham estado por meio de um ancestral comum.
+  \item O estado deve subir apenas até a menor fronteira que atende seus
+    consumidores.
+  \item Uma fonte de verdade elimina a necessidade de sincronizar cópias.
+  \item Valores descem por propriedades e eventos sobem por callbacks.
+  \item Props drilling importa quando intermediários participam sem usar os
+    dados.
+  \item Context é justificável quando o valor é transversal e a árvore vira
+    apenas um canal de transporte.
+  \item O Provider mantém a fonte de verdade; o contexto distribui seu contrato.
+  \item Um hook próprio torna o consumo consistente e falha de forma clara.
+\end{itemize}
+\end{resumo}
+
+Compartilhar estado não começa com Zustand. Começa escolhendo quem é responsável
+por ele e tornando o fluxo visível para o time. No próximo capítulo, veremos o
+que acontece quando Context deixa de ser um canal pequeno e vira um depósito.

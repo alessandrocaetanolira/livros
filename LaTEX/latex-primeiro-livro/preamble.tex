@@ -1,0 +1,85 @@
+\usepackage{fontspec}
+\usepackage[brazil]{babel}
+\usepackage{microtype}
+\usepackage[a4paper,margin=2.6cm,headheight=15pt]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{amsmath}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{natbib}
+\usepackage{makeidx}
+\usepackage{hyperref}
+
+% Fontes distribuídas normalmente com o TeX Live.
+\setmainfont{TeX Gyre Pagella}
+\setsansfont{TeX Gyre Heros}
+\setmonofont{TeX Gyre Cursor}
+\setlength{\emergencystretch}{1em}
+
+\definecolor{AzulLivro}{HTML}{183B56}
+\definecolor{DouradoLivro}{HTML}{D19A32}
+\definecolor{FundoCodigo}{HTML}{F5F7F9}
+\definecolor{VerdeCodigo}{HTML}{356859}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=AzulLivro,
+  citecolor=VerdeCodigo,
+  urlcolor=MidnightBlue,
+  pdftitle={LaTeX do Zero ao Primeiro Livro}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small\thepage\quad\nouppercase{\leftmark}}
+\fancyhead[RO]{\small\nouppercase{\rightmark}\quad\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\chapter}[display]
+  {\sffamily\bfseries\color{AzulLivro}}
+  {\filleft\Large\chaptername\ \thechapter}
+  {1ex}
+  {\titlerule\vspace{1ex}\Huge}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{FundoCodigo},
+  keywordstyle=\color{AzulLivro}\bfseries,
+  commentstyle=\color{VerdeCodigo}\itshape,
+  stringstyle=\color{BrickRed},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  frame=single,
+  rulecolor=\color{gray!30},
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=2
+}
+
+\lstdefinelanguage{LaTeXBook}{
+  language=[LaTeX]TeX,
+  morekeywords={documentclass,usepackage,begin,end,chapter,section,
+    includegraphics,label,ref,cite,frontmatter,mainmatter,backmatter,include}
+}
+
+\newtcolorbox{pratica}[1][]{
+  colback=blue!3,colframe=AzulLivro,fonttitle=\bfseries,
+  title=Pratique agora,#1
+}
+\newtcolorbox{atencao}[1][]{
+  colback=yellow!8,colframe=DouradoLivro!80!black,fonttitle=\bfseries,
+  title=Atenção,#1
+}
+\newtcolorbox{resultado}[1][]{
+  colback=green!4,colframe=VerdeCodigo,fonttitle=\bfseries,
+  title=Resultado esperado,#1
+}
+
+\newcommand{\comando}[1]{\texttt{\textbackslash#1}}
+\newcommand{\arquivo}[1]{\texttt{#1}}
+\makeindex

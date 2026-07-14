@@ -1,0 +1,60 @@
+\chapter{Referências e bibliografia}
+\label{chap:referencias}
+
+\section{Separando dados bibliográficos}
+
+Referências\index{bibliografia} não devem ser digitadas e numeradas manualmente. Um arquivo
+\arquivo{.bib} armazena cada fonte como um registro identificado por uma chave:
+
+\begin{lstlisting}
+@book{lamport1994,
+  author    = {Leslie Lamport},
+  title     = {LaTeX: A Document Preparation System},
+  year      = {1994},
+  publisher = {Addison-Wesley}
+}
+\end{lstlisting}
+
+No texto, \comando{citep} produz uma citação entre parênteses. O comando
+\comando{citet} incorpora o autor à frase quando usamos \arquivo{natbib}. Ao
+final de \arquivo{main.tex}, indicamos o estilo e o banco:
+
+\begin{lstlisting}[language=LaTeXBook]
+\bibliographystyle{plainnat}
+\bibliography{bibliography}
+\end{lstlisting}
+
+Somente fontes citadas aparecem na lista. Use chaves curtas e estáveis, seguindo
+o padrão \emph{sobrenome, ano e tema}. Complete autor, título, ano e publicação;
+para páginas web, registre endereço e data de acesso.
+
+\section{O ciclo de compilação}
+
+A bibliografia exige mais de uma etapa: LaTeX descobre as citações, BibTeX monta
+a lista e LaTeX incorpora e numera o resultado. \arquivo{latexmk} detecta essa
+sequência. Se aparecer \verb|[?]|, compile novamente e procure no log por uma
+chave inexistente ou erro no arquivo \arquivo{.bib}.
+
+Projetos acadêmicos podem preferir \arquivo{biblatex} com Biber, que oferece
+controle mais amplo. Para começar, \arquivo{natbib} e BibTeX formam um fluxo
+simples e suficiente. Não misture os dois sistemas na mesma configuração.
+
+\section{Índice remissivo}
+
+O índice remissivo ajuda o leitor a localizar conceitos, não apenas títulos.
+Carregue \arquivo{makeidx} e ative a criação do índice no preâmbulo. Marque os
+termos no texto e imprima a lista no final do documento.
+
+\begin{lstlisting}[language=LaTeXBook]
+LuaLaTeX\index{LuaLaTeX} permite usar fontes OpenType.
+\end{lstlisting}
+
+Marque apenas ocorrências úteis. Indexar toda repetição cria ruído. Assim como a
+bibliografia, o índice depende de processamento auxiliar que o \arquivo{latexmk}
+normalmente executa.
+
+\begin{pratica}
+  Adicione um livro e uma página web ao seu \arquivo{bibliography.bib}. Cite-os
+  em um parágrafo e marque três conceitos para o índice remissivo. Compile e
+  confirme as duas listas no final do PDF.
+\end{pratica}

@@ -1,0 +1,66 @@
+\chapter{Compilação, revisão e erros}
+\label{chap:erros}
+
+\section{Ler a primeira mensagem útil}
+
+Quando uma compilação falha, o terminal pode exibir muito texto. Procure a
+primeira linha iniciada por \verb|!| ou uma referência no formato
+\arquivo{arquivo.tex:linha}. Erros posteriores frequentemente são apenas
+consequências do primeiro.
+
+Problemas comuns incluem:
+
+\begin{itemize}
+  \item \emph{Undefined control sequence}: comando digitado incorretamente ou
+    pacote ausente;
+  \item \emph{File not found}: caminho, extensão ou maiúsculas não coincidem;
+  \item \emph{Missing \}}: chave aberta sem fechamento;
+  \item \emph{Environment ... undefined}: ambiente incorreto ou pacote não
+    carregado;
+  \item \emph{There were undefined references}: rótulo ausente ou necessidade
+    de outra passagem.
+\end{itemize}
+
+Reduza o problema: comente temporariamente partes recentes, compile e reative
+pequenos blocos. Não apague arquivos-fonte para ``limpar'' o projeto. Use
+\arquivo{latexmk -C} para remover apenas artefatos.
+
+\section{Avisos que merecem revisão}
+
+Uma compilação bem-sucedida ainda pode conter avisos. \emph{Overfull hbox}
+indica conteúdo ultrapassando a margem, muitas vezes por URL ou código longo.
+Referências e citações indefinidas aparecem como interrogações no PDF. Fontes
+substituídas podem alterar a aparência esperada.
+
+Revise também o resultado visual: páginas isoladas, títulos no fim da página,
+imagens ilegíveis, inconsistência de termos e espaços excessivos. A ausência de
+erros técnicos não garante um bom livro.
+
+\section{Um fluxo diário seguro}
+
+Trabalhe em incrementos pequenos:
+
+\begin{enumerate}
+  \item escreva uma seção curta;
+  \item compile com \arquivo{latexmk -lualatex main.tex};
+  \item corrija o primeiro erro e repita;
+  \item confira avisos e páginas alteradas;
+  \item registre uma versão funcional no Git.
+\end{enumerate}
+
+O modo contínuo, \arquivo{latexmk -lualatex -pvc main.tex}, recompila ao salvar.
+No VS Code, a extensão LaTeX Workshop oferece compilação, visualização e salto
+entre fonte e PDF.
+
+\begin{atencao}
+  Um projeto que depende de LuaLaTeX deve ser compilado sempre com LuaLaTeX.
+  Executar pdfLaTeX sobre um preâmbulo com \arquivo{fontspec} produz um erro por
+  projeto de forma intencional.
+\end{atencao}
+
+\begin{pratica}
+  Faça uma cópia de um capítulo e provoque três erros: remova uma chave, altere
+  o nome de um ambiente e referencie uma imagem inexistente. Identifique a
+  primeira mensagem útil de cada caso e depois restaure o arquivo.
+\end{pratica}
+

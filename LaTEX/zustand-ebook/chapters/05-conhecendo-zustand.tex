@@ -1,0 +1,277 @@
+\capitulocapa{images/cap-5.png}{Conhecendo o Zustand}
+\label{chap:conhecendo-zustand}
+
+\section{A terceira alteração no mesmo Provider}
+
+\begin{historia}
+Depois de separar o Context no capítulo anterior, o tema estava organizado. O
+Provider era pequeno, os consumidores eram conhecidos e a aplicação funcionava.
+
+Então a equipe recebeu outra necessidade transversal: o Drawer de notificações
+deveria abrir pelo Header, pelo Dashboard e por atalhos de teclado.
+
+Alguém sugeriu criar outro Context. Outra pessoa perguntou quantos Providers
+teríamos daqui a seis meses. Foi quando apareceu uma alternativa:
+
+``E se esse estado não precisasse morar dentro da árvore de componentes?''
+
+A pergunta levou o time ao Zustand.
+\end{historia}
+
+\ilustracaopendente{5-1-terceira-alteracao}{Cena em um ambiente de trabalho:
+três pessoas observam o DevPanel em um monitor. Na tela, o Header, o Dashboard e
+um atalho de teclado apontam para o mesmo Drawer de notificações. Ao lado do
+monitor, vários blocos identificados como ``Provider'' começam a se empilhar,
+enquanto uma das pessoas sugere retirar esse estado da árvore de componentes.}
+
+Zustand não entra no DevPanel porque Context falhou. Context continua apropriada
+para vários cenários. Zustand entra porque começamos a precisar de stores com
+acesso direto, assinaturas mais específicas e uma organização que não dependa da
+posição dos componentes.
+
+\section{O problema: distribuição e gerenciamento se misturaram}
+
+Context distribui um valor produzido por algum componente. Por isso, normalmente
+criamos um Provider, colocamos estado dentro dele, definimos ações e envolvemos
+uma parte da árvore.
+
+Essa solução une duas responsabilidades:
+
+\begin{itemize}
+  \item o componente Provider participa do ciclo de vida do React;
+  \item o contexto transporta o valor até os consumidores.
+\end{itemize}
+
+Para o tema, o custo era aceitável. Conforme novos estados transversais aparecem,
+começamos a repetir Providers, hooks de validação, memoização e decisões sobre
+onde envolver a árvore.
+
+O que procuramos agora é uma fonte de verdade que exista fora dos componentes e
+permita que cada consumidor assine apenas aquilo que utiliza.
+
+\section{Como normalmente resolvemos}
+
+Antes de adicionar uma dependência, vale lembrar as opções que já conhecemos.
+
+\subsection{Elevar o estado e passar props}
+
+É a solução mais explícita. Funciona muito bem quando os consumidores estão
+próximos e a árvore é estável. O custo surge com intermediários e rotas distantes.
+
+\subsection{Criar um Context pequeno}
+
+É adequado para valores transversais e pouco mutáveis. O custo aparece quando
+precisamos de várias atualizações independentes, seleção granular ou acesso fora
+de componentes.
+
+\subsection{Usar uma variável de módulo}
+
+Uma variável exportada existe fora da árvore, mas não é uma store React. Alterar
+o valor não cria por si só uma assinatura, não solicita renderização e não
+estabelece um contrato seguro de atualização.
+
+Zustand ocupa justamente esse espaço: um store externo com mecanismo de
+assinatura integrado ao React.
+
+\section{O que é uma store do Zustand?}
+
+Uma store reúne estado e ações. Ela existe independentemente de qualquer
+componente. O React se conecta a ela por um hook, e cada componente informa qual
+parcela deseja observar.
+
+Uma primeira store de tema pode ser escrita assim:
+
+\begin{lstlisting}[caption={Uma store pequena de tema.},label={lst:theme-store}]
+import { create } from 'zustand'
+
+type Theme = 'light' | 'dark'
+
+type ThemeStore = {
+  theme: Theme
+  toggleTheme: () => void
+}
+
+export const useThemeStore = create<ThemeStore>((set) => ({
+  theme: 'light',
+  toggleTheme: () =>
+    set((state) => ({
+      theme: state.theme === 'light' ? 'dark' : 'light',
+    })),
+}))
+\end{lstlisting}
+
+Mesmo antes de estudar cada detalhe, conseguimos enxergar o contrato:
+\codigo{theme} é o dado e \codigo{toggleTheme} é a operação permitida. Não há
+Provider nem prop intermediária.
+
+\begin{decisao}
+Uma store não deve ser chamada de global apenas porque pode ser importada em
+qualquer lugar. Seu alcance técnico é amplo; sua responsabilidade deve continuar
+pequena e explícita.
+\end{decisao}
+
+\section{Consumindo apenas o necessário}
+
+O Header precisa do valor e da ação:
+
+\begin{lstlisting}
+export function Header() {
+  const theme = useThemeStore((store) => store.theme)
+  const toggleTheme = useThemeStore((store) => store.toggleTheme)
+
+  return (
+    <header>
+      <span>Tema: {theme}</span>
+      <button type="button" onClick={toggleTheme}>
+        Alternar tema
+      </button>
+    </header>
+  )
+}
+\end{lstlisting}
+
+A função entregue ao hook é um \emph{selector}. Ela declara qual parte interessa
+ao componente. Quando \codigo{theme} mudar, o Header recebe o novo valor. Quando
+outra informação da store mudar no futuro, esse selector ajuda a evitar uma
+atualização sem relação com o Header.
+
+A Sidebar precisa apenas ler:
+
+\begin{lstlisting}
+export function Sidebar() {
+  const theme = useThemeStore((store) => store.theme)
+
+  return <aside>Tema atual: {theme}</aside>
+}
+\end{lstlisting}
+
+Não passamos \codigo{theme} pelo Layout. Não envolvemos a aplicação num Provider.
+Header e Sidebar importam o mesmo hook, mas cada um possui sua própria assinatura.
+
+\section{O que acontece quando a ação é chamada?}
+
+A função \codigo{create} recebe uma criadora de estado. Zustand fornece
+\codigo{set}, usado para produzir a próxima versão da store.
+
+No nosso exemplo, o próximo tema depende do atual. Por isso usamos a forma
+funcional:
+
+\begin{lstlisting}
+set((state) => ({
+  theme: state.theme === 'light' ? 'dark' : 'light',
+}))
+\end{lstlisting}
+
+Quando a ação executa:
+
+\begin{enumerate}
+  \item Zustand lê o estado atual;
+  \item a função devolve a parcela que mudou;
+  \item a store combina a atualização no nível superior;
+  \item as assinaturas são notificadas;
+  \item consumidores cujo resultado selecionado mudou renderizam novamente.
+\end{enumerate}
+
+Por baixo da integração com React existe o protocolo apropriado para stores
+externos. Não precisamos manipular o DOM, emitir eventos próprios ou implementar
+uma inscrição manual.
+
+\section{Antes e depois}
+
+Na versão com props, o Layout possuía o tema e o entregava aos filhos. Na versão
+com Context, um Provider mantinha o valor e o distribuía. Com Zustand, a store é
+a fonte de verdade, e os componentes assinam diretamente suas parcelas.
+
+Isso reduz código de transporte. Não elimina a necessidade de arquitetura.
+Ainda precisamos decidir:
+
+\begin{itemize}
+  \item o que merece entrar na store;
+  \item quais ações fazem parte de seu contrato;
+  \item quanto tempo o estado deve existir;
+  \item se o dado pertence ao cliente ou ao servidor;
+  \item quais componentes realmente precisam assiná-lo.
+\end{itemize}
+
+Zustand facilita a mecânica. As decisões continuam sendo nossas.
+
+\ilustracaopendente{5-2-props-context-zustand}{Diagrama em três quadros. No
+primeiro, o estado desce pela árvore por várias props intermediárias. No segundo,
+um Provider envolve a árvore e distribui o valor por Context. No terceiro, uma
+store do Zustand fica ao lado da árvore, e Header e Sidebar se conectam
+diretamente a parcelas específicas por meio de selectors. Destacar visualmente
+que somente os consumidores interessados recebem cada atualização.}
+
+\section{Limitações e cuidados}
+
+\subsection{Importar de qualquer lugar é tentador}
+
+Como a store não depende da árvore, qualquer arquivo pode importá-la. Se o time
+usar essa liberdade sem fronteiras, dependências invisíveis se espalham. Uma
+store pequena deve possuir nome, domínio e contrato reconhecíveis.
+
+\subsection{Nem todo useState deve migrar}
+
+O campo de busca usado por uma única página continua local. A abertura de um
+menu pertencente a um componente continua local. Mover tudo para Zustand aumenta
+o alcance e prolonga o ciclo de vida sem necessidade.
+
+\subsection{Dados remotos possuem outro problema}
+
+A lista de usuários vem de uma API. Ela envolve cache, atualização, erro e
+sincronização com o servidor. Conseguimos colocá-la numa store, mas isso não
+significa que deveríamos reconstruir manualmente uma ferramenta de consultas.
+Esse será o assunto do próximo capítulo.
+
+\section{Quando considerar Zustand}
+
+Zustand começa a fazer sentido quando temos estado do cliente compartilhado por
+regiões distantes, quando selectors reduzem o acoplamento das atualizações ou
+quando a lógica precisa ser acessada fora dos componentes.
+
+Também é útil quando a equipe quer ações próximas do estado sem adotar uma
+estrutura muito extensa. A API pequena é uma vantagem desde que não seja usada
+como desculpa para uma store sem organização.
+
+Não existe uma quantidade mágica de componentes. O critério é o custo que o
+compartilhamento atual impõe e a natureza do dado.
+
+\section{Exercício: migre o tema}
+
+\begin{tarefa}
+Substitua \codigo{ThemeProvider} por uma store de tema. Conecte Header, Sidebar e
+Perfil diretamente ao hook da store. Remova o Provider e todas as props de tema
+que restarem na árvore.
+\end{tarefa}
+
+Depois da migração, registre:
+
+\begin{enumerate}
+  \item onde ficou a fonte de verdade;
+  \item quais componentes assinam o valor;
+  \item quais componentes assinam a ação;
+  \item quais arquivos deixaram de transportar propriedades;
+  \item quais estados do DevPanel devem continuar locais.
+\end{enumerate}
+
+\espacoresposta{9}
+
+Evite adicionar filtros, sessão ou dados da API à store neste exercício. Uma
+primeira store pequena ensina mais que uma store ``completa'' sem fronteiras.
+
+\begin{resumo}
+\begin{itemize}
+  \item Zustand cria stores externos à árvore de componentes.
+  \item Estado e ações formam o contrato público da store.
+  \item Componentes usam selectors para assinar parcelas específicas.
+  \item O acesso direto elimina props de transporte e a exigência de Provider
+    no uso comum.
+  \item A API pequena não elimina decisões sobre responsabilidade e ciclo de
+    vida.
+  \item Estado local e Context continuam úteis quando combinam melhor com o
+    problema.
+\end{itemize}
+\end{resumo}
+
+Conhecer Zustand não significa colocar tudo nele. Significa ter outra ferramenta
+e saber reconhecer o problema para o qual ela foi desenhada.

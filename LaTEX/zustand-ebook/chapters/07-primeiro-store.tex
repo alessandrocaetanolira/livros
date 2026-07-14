@@ -1,0 +1,263 @@
+\capitulocapa{images/cap-7.png}{Como criar o primeiro store?}
+\label{chap:primeiro-store}
+
+\section{Um modal que começou em uma página}
+
+\begin{historia}
+A equipe adicionou à página de Usuários um botão ``Convidar pessoa''. Ao clicar,
+um modal era aberto por um \codigo{useState} local. A implementação era simples e
+adequada ao pedido daquele momento.
+
+Na semana seguinte, o mesmo convite passou a ser iniciado pelo Header vazio, por
+um atalho na tela inicial e por uma ação rápida da busca. Elevar o estado faria
+componentes intermediários transportarem propriedades que não utilizavam.
+
+Alguém propôs criar uma store com tudo que o modal poderia precisar: campos do
+formulário, mensagens, permissões e resposta da API. Antes de escrever código, a
+equipe fez uma pergunta menor: qual é o menor contrato capaz de coordenar a
+abertura e o fechamento?
+\end{historia}
+
+\ilustracaopendente{7-1-modal-varias-origens}{Cena do DevPanel com o modal de
+convite no centro. Três caminhos apontam para ele: o botão da página de Usuários,
+uma ação rápida no Dashboard e a busca do Header. Nenhum caminho deve atravessar
+componentes intermediários; todos se conectam à mesma pequena store desenhada ao
+lado do modal.}
+
+O primeiro store útil não precisa representar uma área inteira do produto. Ele
+precisa possuir uma responsabilidade clara, estado suficiente e ações que
+expressem as interações permitidas.
+
+\section{Comece pelo contrato}
+
+Antes de chamar \codigo{create}, escrevemos as perguntas que o restante da
+aplicação precisa responder:
+
+\begin{itemize}
+  \item o modal está aberto?
+  \item qual e-mail pode aparecer preenchido ao abrir?
+  \item como iniciar um novo convite?
+  \item como encerrar o fluxo?
+\end{itemize}
+
+O contrato TypeScript nasce dessas perguntas:
+
+\begin{lstlisting}[caption={Estado e ações do fluxo de convite.}]
+type InviteState = {
+  isOpen: boolean
+  initialEmail: string | null
+}
+
+type InviteActions = {
+  openInvite: (email?: string) => void
+  closeInvite: () => void
+}
+
+type InviteStore = InviteState & InviteActions
+\end{lstlisting}
+
+Separar os tipos de estado e ações torna a intenção visível. Não é uma exigência
+do Zustand, mas ajuda o time a discutir o contrato sem se perder na
+implementação.
+
+O formulário digitado pela pessoa pode continuar local ao modal. A resposta da
+API continua sendo responsabilidade da ferramenta de consultas. A store guarda
+somente o que coordena esse fluxo entre regiões distantes da interface.
+
+\begin{decisao}
+Modele o comportamento necessário agora. Campos adicionados ``para o futuro''
+aumentam o contrato público e tornam mais difícil descobrir a responsabilidade
+real da store.
+\end{decisao}
+
+\section{Criando a store}
+
+Com o contrato definido, usamos \codigo{create}:
+
+\begin{lstlisting}[caption={Primeira store completa do fluxo de convite.},label={lst:invite-store}]
+import { create } from 'zustand'
+
+export const useInviteStore = create<InviteStore>()((set) => ({
+  isOpen: false,
+  initialEmail: null,
+
+  openInvite: (email) =>
+    set({
+      isOpen: true,
+      initialEmail: email ?? null,
+    }),
+
+  closeInvite: () =>
+    set({
+      isOpen: false,
+      initialEmail: null,
+    }),
+}))
+\end{lstlisting}
+
+A forma \codigo{create<InviteStore>()(...)} informa ao TypeScript o contrato
+completo. Se esquecermos uma ação, retornarmos um tipo incorreto ou chamarmos
+\codigo{openInvite} com um número, o erro aparece durante o desenvolvimento.
+
+A função criadora recebe \codigo{set}. Ela devolve o estado inicial e as ações.
+Quando uma ação chama \codigo{set} com um objeto, Zustand combina essa parcela no
+nível superior da store. Por isso não repetimos \codigo{isOpen} ao atualizar
+apenas outro campo.
+
+Fechar também limpa \codigo{initialEmail}. Essa pequena regra evita que um
+convite futuro herde o destinatário anterior. Quem chama a ação não precisa
+lembrar de executar duas atualizações separadas.
+
+\section{Ações devem expressar intenção}
+
+Poderíamos expor uma ação genérica chamada \codigo{setOpen}. Ela receberia um
+booleano para abrir ou fechar, mas obrigaria os consumidores a conhecer detalhes
+adicionais: quando limpar o e-mail? Como abrir já preenchido? O que significa
+chamá-la com \codigo{true} duas vezes?
+
+\codigo{openInvite} e \codigo{closeInvite} descrevem eventos do produto. A ação
+pode preservar invariantes enquanto a interface apenas comunica a intenção.
+
+Isso não significa criar uma função para qualquer atribuição. Uma ação merece
+existir quando dá nome a um comportamento, reúne campos que precisam mudar juntos
+ou impede combinações inválidas.
+
+\ilustracaopendente{7-2-anatomia-store}{Diagrama da anatomia da store em três
+faixas. A primeira mostra o contrato TypeScript; a segunda, o estado inicial
+``isOpen false'' e ``initialEmail null''; a terceira, as ações ``openInvite'' e
+``closeInvite'' chamando set. Setas devem mostrar que componentes enviam intenções
+às ações e recebem somente as parcelas selecionadas.}
+
+\section{Conectando os componentes}
+
+O botão da página assina somente a ação:
+
+\begin{lstlisting}
+export function InviteButton() {
+  const openInvite = useInviteStore((store) => store.openInvite)
+
+  return (
+    <button type="button" onClick={() => openInvite()}>
+      Convidar pessoa
+    </button>
+  )
+}
+\end{lstlisting}
+
+Uma sugestão da busca pode fornecer o endereço conhecido:
+
+\begin{lstlisting}
+openInvite('maria@empresa.com')
+\end{lstlisting}
+
+Já o componente visual seleciona os dados e a ação que utiliza:
+
+\begin{lstlisting}
+export function InviteDialog() {
+  const isOpen = useInviteStore((store) => store.isOpen)
+  const initialEmail = useInviteStore(
+    (store) => store.initialEmail,
+  )
+  const closeInvite = useInviteStore(
+    (store) => store.closeInvite,
+  )
+
+  if (!isOpen) return null
+
+  return (
+    <Dialog onClose={closeInvite}>
+      <InviteForm initialEmail={initialEmail} />
+    </Dialog>
+  )
+}
+\end{lstlisting}
+
+O modal pode ficar próximo da raiz visual para lidar corretamente com camada,
+foco e acessibilidade. Os botões que o abrem não precisam ser ancestrais dele.
+A store coordena o comportamento; ela não decide onde o HTML será renderizado.
+
+\section{Acesso fora de componentes React}
+
+O hook criado por \codigo{create} também expõe uma API da store. Em um evento do
+navegador, podemos ler o estado atual sem chamar um hook:
+
+\begin{lstlisting}[caption={Atalho global usando a API imperativa.}]
+export function installInviteKeyboardShortcut() {
+  function handleKeyDown(event: KeyboardEvent) {
+    if (event.key !== 'Escape') return
+
+    const store = useInviteStore.getState()
+    if (store.isOpen) store.closeInvite()
+  }
+
+  document.addEventListener('keydown', handleKeyDown)
+
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown)
+  }
+}
+\end{lstlisting}
+
+\codigo{getState()} devolve a fotografia atual da store; não cria uma assinatura
+React. O retorno da função remove o listener e evita registrar o mesmo atalho
+mais de uma vez durante remontagens ou recarregamentos de desenvolvimento.
+
+Esse acesso deve ser pontual. Importar a store em qualquer arquivo é tecnicamente
+possível, mas dependências imperativas demais escondem o fluxo. Eventos externos,
+integrações e testes são usos claros; componentes devem preferir o hook com
+selector.
+
+\ilustracaopendente{7-3-sequencia-escape}{Sequência em quatro passos: modal
+aberto; pessoa pressiona Escape; listener do documento consulta a store; ação
+closeInvite altera isOpen para false e o componente deixa de renderizar o modal.
+Destacar que o listener não manipula diretamente o DOM nem conhece o componente
+visual.}
+
+\section{O que ainda não pertence a esta store}
+
+O texto digitado em cada campo pode ficar no formulário. O envio e a resposta do
+servidor podem ser tratados como mutação remota. A visibilidade de outro modal
+não deve entrar aqui apenas porque também é booleana.
+
+Uma store chamada \codigo{useGlobalStore} tende a receber qualquer novo estado.
+\codigo{useInviteStore} estabelece uma fronteira: coordenação do fluxo de
+convite. O nome ajuda a equipe a dizer não a responsabilidades estranhas.
+
+Também não precisamos introduzir persistência, middleware ou slices. Esses
+recursos serão úteis quando um problema concreto os justificar. A primeira store
+deve permanecer legível em uma única tela.
+
+\section{Exercício: feche com Escape}
+
+\begin{tarefa}
+Implemente o fechamento do modal pela tecla Escape sem adicionar um listener
+dentro de \codigo{InviteDialog} e sem manipular o DOM para esconder o elemento.
+Instale o atalho uma única vez e garanta a remoção do listener.
+\end{tarefa}
+
+Depois, responda:
+
+\begin{enumerate}
+  \item por que \codigo{closeInvite} pertence ao contrato da store;
+  \item qual diferença existe entre o hook e \codigo{getState()};
+  \item onde o atalho deve ser instalado e removido;
+  \item quais dados permanecem locais ao formulário;
+  \item que nome genérico tornaria a fronteira menos clara.
+\end{enumerate}
+
+\espacoresposta{9}
+
+\begin{resumo}
+\begin{itemize}
+  \item Um bom primeiro store começa por um contrato pequeno.
+  \item Estado inicial e ações formam sua API pública.
+  \item A forma \codigo{create<T>()(...)} mantém o contrato tipado.
+  \item \codigo{set} combina atualizações no primeiro nível da store.
+  \item Ações semânticas preservam regras e comunicam intenção.
+  \item Componentes usam selectors; eventos externos podem usar
+    \codigo{getState()} com moderação.
+\end{itemize}
+\end{resumo}
+
+No próximo capítulo, os filtros do Dashboard mostrarão por que atualizar estado
+não é apenas expor setters: as regras de mudança também precisam de um lugar.

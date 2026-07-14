@@ -1,0 +1,276 @@
+\capitulocapa{images/cap-4.png}{Por que Context API nem sempre resolve?}
+\label{chap:context-api}
+
+\section{O Provider que virou gaveta}
+
+\begin{historia}
+A migração do tema foi bem recebida. Sumiram várias propriedades, o Header ficou
+menor e o Perfil passou a acessar a preferência sem conhecer o Layout.
+
+Então veio a ideia que parecia economizar tempo:
+
+``Já temos um contexto global. Coloca nele também os filtros do Dashboard, o
+usuário selecionado, o Drawer e as notificações.''
+
+Algumas semanas depois, o arquivo tinha centenas de linhas. Uma alteração no
+campo de busca fazia componentes distantes renderizarem novamente. Ninguém sabia
+quais ações pertenciam a qual parte do estado.
+
+Context continuava funcionando. O problema era o trabalho que passamos a exigir
+dele.
+\end{historia}
+
+Context API resolveu o \emph{como distribuir} o tema. Ela não decidiu quais
+dados deveriam ser globais, como organizar ações, com que frequência o valor
+mudaria ou quais consumidores deveriam reagir a cada mudança.
+
+Essa distinção evita dois extremos: rejeitar Context por completo ou transformá-la
+automaticamente no store da aplicação.
+
+\section{O problema: tudo cabe no mesmo contexto}
+
+Tecnicamente, nada impede um contrato como este:
+
+\begin{lstlisting}[caption={Um contexto que começou a acumular responsabilidades.}]
+type AppContextValue = {
+  theme: Theme
+  toggleTheme: () => void
+  search: string
+  setSearch: (value: string) => void
+  status: UserStatus
+  setStatus: (status: UserStatus) => void
+  isDrawerOpen: boolean
+  openDrawer: () => void
+  closeDrawer: () => void
+}
+\end{lstlisting}
+
+O nome \codigo{AppContext} já é um sinal. Ele não descreve um domínio ou uma
+responsabilidade; descreve apenas o fato de estar na aplicação.
+
+Tema, busca e Drawer possuem motivos diferentes para mudar. Também possuem
+consumidores e ciclos de vida diferentes. Colocá-los no mesmo objeto cria uma
+fronteira artificial: qualquer mudança produz um novo valor para o mesmo
+Provider.
+
+\section{Como normalmente tentamos corrigir}
+
+Quando aparecem renderizações inesperadas, a primeira tentativa costuma ser
+envolver o valor em \codigo{useMemo}:
+
+\begin{lstlisting}
+const value = useMemo(
+  () => ({
+    theme,
+    toggleTheme,
+    search,
+    setSearch,
+    isDrawerOpen,
+    openDrawer,
+    closeDrawer,
+  }),
+  [theme, search, isDrawerOpen],
+)
+\end{lstlisting}
+
+Isso evita criar outro objeto quando nenhuma dependência mudou. Mas, quando a
+pessoa digita uma letra na busca, \codigo{search} muda, o objeto muda e os
+consumidores daquele contexto recebem um novo valor.
+
+Memoização não cria seleção por campo. Ela não permite que um consumidor assine
+somente \codigo{theme} dentro de um objeto cujo \codigo{search} muda a cada
+tecla.
+
+Outra tentativa é envolver todos os componentes em \codigo{memo}. Um consumidor
+de contexto, porém, precisa reagir quando o contexto que ele lê muda. A
+memoização de propriedades não transforma o contexto numa assinatura granular.
+
+\begin{decisao}
+Antes de adicionar memoização, verifique se a fronteira está correta. Otimizar um
+contexto que mistura responsabilidades preserva a causa estrutural e acrescenta
+mais código para o time entender.
+\end{decisao}
+
+\section{Por que as renderizações se espalham?}
+
+O Provider disponibiliza um valor. Quando esse valor muda, React precisa
+notificar os componentes que consomem aquele contexto. O consumidor pode usar
+apenas um campo, mas sua inscrição é no contexto, não naquele campo isolado.
+
+Considere dois componentes:
+
+\begin{lstlisting}
+function ThemeBadge() {
+  const { theme } = useAppContext()
+  return <span>{theme}</span>
+}
+
+function SearchField() {
+  const { search, setSearch } = useAppContext()
+  return <input value={search} onChange={(event) => {
+    setSearch(event.target.value)
+  }} />
+}
+\end{lstlisting}
+
+Ao digitar, o valor do Provider muda. \codigo{ThemeBadge} volta a executar mesmo
+que \codigo{theme} continue igual. Em uma aplicação pequena, isso pode ser
+irrelevante. Em telas grandes, com mudanças frequentes e muitos consumidores, o
+custo começa a aparecer.
+
+\ilustracaopendente{ch04-renderizacao-context}{Uma alteração em search cria novo valor no AppContext e alcança ThemeBadge, Sidebar e SearchField, destacando consumidores sem mudança útil.}
+
+O objetivo não é perseguir zero renderizações. Renderizar é parte do React. O
+problema é acoplar regiões independentes a uma frequência de mudança que não
+pertence a elas.
+
+\section{Mistura de responsabilidades}
+
+Desempenho é apenas uma parte do problema. Um contexto grande também mistura
+decisões:
+
+\begin{itemize}
+  \item quem pode alterar cada campo;
+  \item quais valores devem persistir;
+  \item o que deve ser reiniciado ao trocar de rota;
+  \item quais ações representam regras do domínio;
+  \item como testar cada comportamento isoladamente.
+\end{itemize}
+
+O Provider passa a conhecer detalhes de interface, preferências, filtros e
+sessão. Um teste do tema precisa montar dependências da busca. Uma alteração no
+Drawer modifica o mesmo contrato usado pelo Perfil.
+
+Context não causou essa mistura. Nós escolhemos a fronteira errada porque o
+mecanismo aceitava qualquer valor.
+
+\section{Uma solução melhor: contextos pequenos}
+
+O tema continua sendo um bom candidato para Context:
+
+\begin{itemize}
+  \item é transversal;
+  \item muda pouco;
+  \item possui contrato pequeno;
+  \item seus consumidores estão dentro da mesma área da aplicação;
+  \item não exige seleção complexa.
+\end{itemize}
+
+Portanto, mantemos \codigo{ThemeProvider} pequeno. Os filtros do Dashboard podem
+permanecer próximos da página que os utiliza. O Drawer pode ganhar outra
+fronteira quando houver consumidores suficientes. Não precisamos escolher uma
+única ferramenta para todos os estados.
+
+\begin{lstlisting}[caption={Um Provider com uma única responsabilidade.}]
+type ThemeContextValue = {
+  theme: Theme
+  toggleTheme: () => void
+}
+
+function ThemeProvider({ children }: ThemeProviderProps) {
+  const [theme, setTheme] = useState<Theme>('light')
+
+  function toggleTheme() {
+    setTheme((current) => (current === 'light' ? 'dark' : 'light'))
+  }
+
+  return (
+    <ThemeContext value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext>
+  )
+}
+\end{lstlisting}
+
+Separar contextos não significa criar um Provider para cada booleano. A
+fronteira deve representar uma responsabilidade coesa. Tema e ação de alternar
+mudam pelo mesmo motivo; busca e Drawer não.
+
+\section{Estado local ainda participa da arquitetura}
+
+Os filtros do Dashboard não precisam ser globais apenas porque mais de um
+componente da página os utiliza. Podemos mantê-los na própria página e
+distribuí-los para os controles de busca e de status.
+
+\begin{lstlisting}
+function DashboardPage() {
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState<UserStatus>('all')
+
+  return (
+    <DashboardFilters
+      search={search}
+      status={status}
+      onSearchChange={setSearch}
+      onStatusChange={setStatus}
+    />
+  )
+}
+\end{lstlisting}
+
+Essa solução mantém a frequência de digitação dentro da página. O Header e a
+Sidebar não participam. Se outra rota precisar dos mesmos filtros no futuro,
+reavaliaremos a fronteira com um requisito concreto.
+
+\section{Quando Context ainda faz sentido}
+
+Context costuma funcionar bem quando:
+
+\begin{itemize}
+  \item a informação é naturalmente transversal;
+  \item o contrato é pequeno e estável;
+  \item as mudanças são pouco frequentes;
+  \item a maioria dos consumidores se interessa pelo valor completo;
+  \item o Provider possui responsabilidade clara.
+\end{itemize}
+
+Tema, idioma e dependências de infraestrutura são exemplos comuns. Sessão pode
+ser adequada, desde que credenciais, dados remotos e preferências não sejam
+misturados sem critério.
+
+Context começa a incomodar quando precisamos de seletores, ações organizadas,
+leitura fora do React, middlewares ou muitas atualizações independentes. Esses
+requisitos não tornam Context ruim; indicam que precisamos de uma ferramenta
+com outro modelo.
+
+\section{Exercício: faça o inventário}
+
+\begin{tarefa}
+O time sugeriu colocar tema, filtros do Dashboard, Drawer de notificações,
+usuário da sessão e rascunho do Perfil em um único \codigo{AppContext}. Antes de
+implementar, classifique cada item e decida onde ele deve viver por enquanto.
+\end{tarefa}
+
+Para cada estado, registre:
+
+\begin{enumerate}
+  \item quem lê e quem altera;
+  \item com que frequência muda;
+  \item por quanto tempo deve existir;
+  \item se pertence a uma tela, à interface inteira ou ao servidor;
+  \item se Context oferece uma fronteira coesa para ele.
+\end{enumerate}
+
+\espacoresposta{10}
+
+Não procure uma resposta única chamada ``estado global''. O exercício está
+correto quando cada decisão possui um motivo que o restante do time consegue
+questionar e revisar.
+
+\begin{resumo}
+\begin{itemize}
+  \item Context distribui um valor; ela não organiza automaticamente o estado.
+  \item Consumidores reagem quando o valor do contexto muda, mesmo quando usam
+    apenas uma parcela que permaneceu igual.
+  \item Memoização não corrige uma fronteira que mistura responsabilidades.
+  \item Contextos pequenos reduzem acoplamento e tornam contratos mais claros.
+  \item Estado local continua sendo a primeira opção para demandas restritas a
+    uma tela.
+  \item Context é uma boa escolha para valores transversais, pequenos e pouco
+    mutáveis.
+\end{itemize}
+\end{resumo}
+
+No próximo capítulo, separaremos estado do cliente e estado do servidor. Essa
+distinção evitará colocar no contexto outro tipo de dado que já possui seus
+próprios problemas de sincronização.
