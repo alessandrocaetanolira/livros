@@ -51,7 +51,10 @@ difíceis de rastrear.
 O caminho previsível é subir até o primeiro componente que contém todos os
 consumidores e, a partir dele, distribuir o valor para baixo.
 
-\ilustracaopendente{ch03-fluxo-fonte-unica}{O tema sobe do Header para o AppLayout e desce como propriedade para Header, Sidebar e conteúdo principal.}
+\imagemcapitulo
+  {ch03-fluxo-fonte-unica}
+  {O AppLayout se torna a fonte única e distribui o tema aos consumidores.}
+  {fluxo-fonte-unica}
 
 \section{Como normalmente resolvemos}
 
@@ -192,7 +195,10 @@ contratos precisam aceitá-lo apenas para continuar o caminho. Isso é
 \emph{props drilling}: propriedades atravessando camadas intermediárias para
 alcançar um consumidor distante.
 
-\ilustracaopendente{ch03-arvore-props-drilling}{Árvore com AppLayout, MainContent, RouteContent e ProfilePage; o tema atravessa em destaque os intermediários que não o utilizam.}
+\imagemcapitulo
+  {ch03-arvore-props-drilling}
+  {Componentes intermediários recebem e repassam uma propriedade que não usam.}
+  {arvore-props-drilling}
 
 Props drilling não é automaticamente um erro. Duas ou três camadas numa árvore
 estável podem ser mais claras que adicionar outra abstração. O problema aparece

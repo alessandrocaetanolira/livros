@@ -18,11 +18,10 @@ teríamos daqui a seis meses. Foi quando apareceu uma alternativa:
 A pergunta levou o time ao Zustand.
 \end{historia}
 
-\ilustracaopendente{5-1-terceira-alteracao}{Cena em um ambiente de trabalho:
-três pessoas observam o DevPanel em um monitor. Na tela, o Header, o Dashboard e
-um atalho de teclado apontam para o mesmo Drawer de notificações. Ao lado do
-monitor, vários blocos identificados como ``Provider'' começam a se empilhar,
-enquanto uma das pessoas sugere retirar esse estado da árvore de componentes.}
+\imagemcapitulo
+  {5-1-terceira-alteracao}
+  {Múltiplas origens tornam visível o custo de coordenar o Drawer na árvore.}
+  {terceira-alteracao}
 
 Zustand não entra no DevPanel porque Context falhou. Context continua apropriada
 para vários cenários. Zustand entra porque começamos a precisar de stores com
@@ -195,12 +194,10 @@ Ainda precisamos decidir:
 
 Zustand facilita a mecânica. As decisões continuam sendo nossas.
 
-\ilustracaopendente{5-2-props-context-zustand}{Diagrama em três quadros. No
-primeiro, o estado desce pela árvore por várias props intermediárias. No segundo,
-um Provider envolve a árvore e distribui o valor por Context. No terceiro, uma
-store do Zustand fica ao lado da árvore, e Header e Sidebar se conectam
-diretamente a parcelas específicas por meio de selectors. Destacar visualmente
-que somente os consumidores interessados recebem cada atualização.}
+\imagemcapitulo
+  {5-2-props-context-zustand}
+  {Props, Context e Zustand distribuem o mesmo tema por caminhos diferentes.}
+  {props-context-zustand}
 
 \section{Limitações e cuidados}
 

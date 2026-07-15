@@ -118,7 +118,10 @@ que \codigo{theme} continue igual. Em uma aplicação pequena, isso pode ser
 irrelevante. Em telas grandes, com mudanças frequentes e muitos consumidores, o
 custo começa a aparecer.
 
-\ilustracaopendente{ch04-renderizacao-context}{Uma alteração em search cria novo valor no AppContext e alcança ThemeBadge, Sidebar e SearchField, destacando consumidores sem mudança útil.}
+\imagemcapitulo
+  {ch04-renderizacao-context}
+  {Um novo valor do Context alcança consumidores que não usam a parcela alterada.}
+  {renderizacao-context}
 
 O objetivo não é perseguir zero renderizações. Renderizar é parte do React. O
 problema é acoplar regiões independentes a uma frequência de mudança que não

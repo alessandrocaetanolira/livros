@@ -17,11 +17,10 @@ o servidor? Quem limpa o erro antigo antes de uma nova tentativa?
 A lista estava compartilhada, mas continuava sem uma política de sincronização.
 \end{historia}
 
-\ilustracaopendente{6-1-lista-desatualizada}{Cena no DevPanel: duas pessoas
-comparam a página de Usuários com o modal de convite aberto ao lado. Os dois
-lugares exibem quantidades diferentes de usuários, enquanto uma terceira pessoa
-aponta para a API no quadro e pergunta qual versão é a atual. Mostrar que ambas
-as telas leram cópias locais em momentos diferentes.}
+\imagemcapitulo
+  {6-1-lista-desatualizada}
+  {Cópias consultadas em momentos diferentes deixam a interface inconsistente.}
+  {lista-desatualizada}
 
 Compartilhar o resultado de uma requisição não transforma esse resultado em
 estado do cliente. Antes de escolher onde guardar um dado, precisamos perguntar
@@ -157,11 +156,10 @@ atualização posterior, pode haver dados disponíveis enquanto
 \codigo{isFetching} indica atividade em segundo plano. Separar essas situações
 evita substituir uma lista útil por uma tela vazia a cada sincronização.
 
-\ilustracaopendente{6-2-fluxo-query-cache}{Diagrama com API à esquerda, cache do
-TanStack Query no centro e página de Usuários mais modal de convite à direita.
-A primeira tela solicita a chave ``users'', o cache busca a API e guarda a
-resposta; a segunda tela recebe a mesma entrada. Uma seta pontilhada representa
-uma atualização em segundo plano sem apagar a lista já exibida.}
+\imagemcapitulo
+  {6-2-fluxo-query-cache-review-2}
+  {Uma entrada do cache atende diferentes consumidores e pode ser revalidada.}
+  {fluxo-query-cache}
 
 \section{Cache não significa dado eterno}
 
@@ -197,11 +195,10 @@ um efeito. Isso cria duas fontes locais de verdade e exige sincronização manua
 Se a interface precisa transformar a lista, prefira derivar o resultado durante
 a leitura ou usar os recursos de seleção da própria consulta.
 
-\ilustracaopendente{6-3-cliente-servidor}{Quadro comparativo dividido ao meio.
-No lado ``estado do cliente'', mostrar tema, Drawer e rascunho de filtro ligados
-ao Zustand. No lado ``estado do servidor'', mostrar usuários e relatórios ligados
-ao cache do TanStack Query e à API. No centro, um componente do DevPanel combina
-as duas fontes sem duplicar os dados.}
+\imagemcapitulo
+  {6-3-cliente-servidor}
+  {O DevPanel combina estado do cliente e dados pertencentes ao servidor.}
+  {cliente-servidor}
 
 \section{Exercício: atualizar sem duplicar o carregamento}
 

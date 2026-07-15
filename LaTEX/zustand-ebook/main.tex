@@ -4,38 +4,40 @@
 \input{preamble}
 
 \title{Estado sem Drama}
-\author{Zustand e decisões de estado para times pequenos}
+\author{Caetano}
 \date{\today}
 
 \begin{document}
 
 \frontmatter
-\livrocapa{images/capa.png}
+\livrocapa{images/capa-review.png}
 
-\chapter*{Nota de arquitetura}
-\addcontentsline{toc}{chapter}{Nota de arquitetura}
-O livro está na fase de arquitetura editorial. A jornada completa, a evolução
-do DevPanel, os exercícios e as ilustrações planejadas estão documentados em
-\texttt{ARQUITETURA.md}. Os capítulos serão incluídos neste arquivo à medida que
-forem escritos e revisados.
+\input{frontmatter/nota-producao}
 
 \tableofcontents
 
+\input{frontmatter/personagens}
+
 \mainmatter
 \part{Antes de escolher uma biblioteca}
-\include{chapters/01-o-que-e-estado}
-\include{chapters/02-limites-use-state}
-\include{chapters/03-compartilhar-estado}
-\include{chapters/04-context-api}
+\input{chapters/01-o-que-e-estado}
+\input{chapters/02-limites-use-state}
+\input{chapters/03-compartilhar-estado}
+\input{chapters/04-context-api}
 \part{A necessidade do Zustand}
-\include{chapters/05-conhecendo-zustand}
-\include{chapters/06-estado-do-servidor}
-\include{chapters/07-primeiro-store}
+\input{chapters/05-conhecendo-zustand}
+\input{chapters/06-estado-do-servidor}
+\input{chapters/07-primeiro-store}
+\input{chapters/08-acoes-e-atualizacoes}
+\input{chapters/09-selectors-performance}
+\input{chapters/10-persistencia}
+
+\backmatter
+\input{backmatter/agradecimentos}
+
+\livrocontracapa{images/contra-capa-review.png}
 
 % Os demais capítulos serão ativados progressivamente durante a redação.
-% \include{chapters/08-acoes-e-atualizacoes}
-% \include{chapters/09-selectors-performance}
-% \include{chapters/10-persistencia}
 % \part{Um store que o time consegue manter}
 % \include{chapters/11-devtools}
 % \include{chapters/12-organizacao-stores}
@@ -47,7 +49,7 @@ forem escritos e revisados.
 % \include{chapters/17-nextjs-ssr}
 % \include{chapters/18-arvore-decisao}
 
-% Ativar com \backmatter quando houver citações e termos indexados.
+% Ativar quando houver citações e termos indexados.
 % \bibliographystyle{plainnat}
 % \bibliography{bibliography}
 % \printindex

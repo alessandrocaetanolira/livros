@@ -1,3 +1,326 @@
-% Pergunta: o que deve sobreviver ao fechamento do navegador?
-% DevPanel: tema e densidade persistidos.
-% Conceito: persist, partialize, versão e hidratação.
+\capitulocapa{images/cap-10.png}{Como lembrar preferências do usuário?}
+\label{chap:persistencia}
+
+\section{A configuração que durava até fechar a aba}
+
+\begin{historia}
+A tela de Configurações do DevPanel ganhou duas preferências: tema claro ou
+escuro e densidade confortável ou compacta. A equipe colocou ambas numa store e
+o resultado pareceu pronto. Header, Sidebar e tabelas reagiam imediatamente.
+
+Na manhã seguinte, uma pessoa abriu o painel e encontrou tudo no padrão. Escolheu
+novamente o tema escuro e a densidade compacta. Depois de atualizar a página
+durante um suporte, perdeu as escolhas pela terceira vez.
+
+O pedido chegou como uma frase curta: ``O painel precisa lembrar de mim.'' Na
+mesma store também vivia o estado de abertura do Drawer de notificações.
+Persistir a store inteira lembraria mais do que a pessoa pediu: o Drawer poderia
+reaparecer aberto após cada visita.
+
+A equipe percebeu que a decisão não era apenas como salvar estado. Era escolher
+qual estado merecia sobreviver.
+\end{historia}
+
+\imagemcapitulo
+  {ch10-fluxo-persist-review}
+  {O middleware persiste preferências e exclui o estado transitório do Drawer.}
+  {fluxo-persist}
+
+Uma store comum vive na memória do processo da página. Atualizar ou fechar a
+página encerra essa memória. Persistência adiciona outro ciclo de vida: parte do
+estado pode ser escrita num armazenamento e recuperada numa execução futura.
+
+\section{Memória e persistência resolvem tempos diferentes}
+
+Enquanto o DevPanel está aberto, Zustand mantém a fotografia atual e notifica os
+componentes interessados. Isso é memória de execução. Ela é rápida e suficiente
+para modais, Drawers, filtros temporários e passos de um fluxo.
+
+Preferências possuem outra expectativa. Tema e densidade representam escolhas
+que a pessoa não quer repetir a cada carregamento. O navegador pode guardá-las
+entre sessões, mas a store continua sendo a interface usada pela aplicação.
+
+Persistir não transforma o storage na nova store. Os componentes não devem ler
+\codigo{localStorage} diretamente. A store permanece como fonte de verdade em
+tempo de execução; o armazenamento fornece uma fotografia que pode restaurá-la.
+
+\begin{decisao}
+Persistência é uma decisão de ciclo de vida. Antes de escolher uma API, pergunte
+se a informação deve sobreviver à página, à aba, ao dispositivo ou à conta.
+\end{decisao}
+
+\section{A store antes da persistência}
+
+O contrato reúne as duas preferências e um estado transitório da interface:
+
+\begin{lstlisting}[caption={Preferências e Drawer possuem ciclos de vida diferentes.}]
+type Theme = 'light' | 'dark'
+type Density = 'comfortable' | 'compact'
+
+type PreferenceStore = {
+  theme: Theme
+  density: Density
+  isNotificationDrawerOpen: boolean
+  selectTheme: (theme: Theme) => void
+  selectDensity: (density: Density) => void
+  openNotificationDrawer: () => void
+  closeNotificationDrawer: () => void
+}
+\end{lstlisting}
+
+Os três valores são estado do cliente e podem viver na mesma store neste estágio
+do projeto. Isso não significa que devam ter a mesma duração. Tema e densidade
+são preferências; Drawer aberto descreve um instante da interface.
+
+Sem persistência, a implementação é conhecida:
+
+\begin{lstlisting}
+export const usePreferenceStore =
+  create<PreferenceStore>()((set) => ({
+    theme: 'light',
+    density: 'comfortable',
+    isNotificationDrawerOpen: false,
+    selectTheme: (theme) => set({ theme }),
+    selectDensity: (density) => set({ density }),
+    openNotificationDrawer: () =>
+      set({ isNotificationDrawerOpen: true }),
+    closeNotificationDrawer: () =>
+      set({ isNotificationDrawerOpen: false }),
+  }))
+\end{lstlisting}
+
+A store funciona, mas sempre recomeça com os valores declarados na criadora.
+
+\section{Adicionando o middleware persist}
+
+Um middleware envolve a função criadora e acrescenta um comportamento ao ciclo
+da store. Para persistência, importamos \codigo{persist}:
+
+\begin{lstlisting}[caption={Store de preferências persistida.},label={lst:preference-persist}]
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
+export const usePreferenceStore =
+  create<PreferenceStore>()(
+    persist(
+      (set) => ({
+        theme: 'light',
+        density: 'comfortable',
+        isNotificationDrawerOpen: false,
+
+        selectTheme: (theme) => set({ theme }),
+        selectDensity: (density) => set({ density }),
+        openNotificationDrawer: () =>
+          set({ isNotificationDrawerOpen: true }),
+        closeNotificationDrawer: () =>
+          set({ isNotificationDrawerOpen: false }),
+      }),
+      {
+        name: 'devpanel-preferences',
+      },
+    ),
+  )
+\end{lstlisting}
+
+\codigo{name} identifica a entrada no armazenamento e deve ser único para a
+aplicação. No navegador, o middleware usa \codigo{localStorage} por padrão e
+serializa os dados em JSON.
+
+Quando uma ação muda o estado, \codigo{persist} grava a fotografia correspondente.
+Quando a store é criada novamente, o middleware procura essa chave e recupera o
+conteúdo disponível.
+
+Essa primeira versão ainda contém um problema: sem outra configuração, estamos
+dispostos a persistir dados demais.
+
+\section{Persistir somente o que foi escolhido}
+
+\codigo{partialize} recebe o estado atual e devolve a parte que será armazenada:
+
+\begin{lstlisting}[caption={Lista explícita das preferências persistidas.},label={lst:preference-partialize}]
+{
+  name: 'devpanel-preferences',
+  partialize: (state) => ({
+    theme: state.theme,
+    density: state.density,
+  }),
+}
+\end{lstlisting}
+
+Agora o storage contém tema e densidade. Ações não precisam ser serializadas e
+\codigo{isNotificationDrawerOpen} fica de fora. Ao recarregar a página, o Drawer
+usa o valor inicial \codigo{false}, mesmo que estivesse aberto antes.
+
+Preferimos declarar o que entra em vez de listar o que deve sair. Quando um novo
+campo for adicionado à store, ele não ganhará vida longa por acidente. A equipe
+precisará decidir conscientemente se esse campo pertence ao contrato persistido.
+
+\imagemcapitulo
+  {ch10-quadro-dados-persistidos}
+  {Cada dado exige duração e destino compatíveis com quem realmente o possui.}
+  {quadro-dados-persistidos}
+
+\section{Storage não é banco de dados nem cofre}
+
+\codigo{localStorage} pertence à origem do site e permanece após fechar o
+navegador. Ele combina com preferências pequenas que não são sigilosas. Também
+é possível escolher outro mecanismo, por exemplo \codigo{sessionStorage}:
+
+\begin{lstlisting}
+import {
+  createJSONStorage,
+  persist,
+} from 'zustand/middleware'
+
+persist(createPreferenceState, {
+  name: 'devpanel-preferences',
+  storage: createJSONStorage(() => sessionStorage),
+})
+\end{lstlisting}
+
+Nesse caso, a informação dura durante a sessão da aba. Armazenamentos assíncronos
+também podem ser integrados, mas mudam o momento em que a restauração termina.
+
+Persistência local não sincroniza preferências entre computadores e não substitui
+uma API quando a escolha pertence à conta. Também não torna o conteúdo seguro.
+Scripts executados na mesma origem podem acessar o storage. Tokens e credenciais
+exigem uma decisão de segurança própria, que será discutida no Capítulo~16.
+
+\section{O formato salvo também evolui}
+
+Meses depois, a equipe pode renomear campos, trocar valores aceitos ou reorganizar
+a store. Pessoas que já usaram o DevPanel continuarão com a fotografia antiga no
+navegador.
+
+Imagine que a primeira versão persistia \codigo{compactMode} como booleano. A
+versão atual usa \codigo{density} com valores semânticos. Apenas alterar o tipo
+no código não converte o JSON já gravado.
+
+O contrato persistido precisa de uma versão:
+
+\begin{lstlisting}[caption={Migração do formato antigo para a versão atual.},label={lst:preference-migrate}]
+type PersistedVersionZero = {
+  theme: Theme
+  compactMode: boolean
+}
+
+{
+  name: 'devpanel-preferences',
+  version: 1,
+  partialize: (state) => ({
+    theme: state.theme,
+    density: state.density,
+  }),
+  migrate: (persistedState, version) => {
+    if (version === 0) {
+      const oldState =
+        persistedState as PersistedVersionZero
+
+      return {
+        theme: oldState.theme,
+        density: oldState.compactMode
+          ? 'compact'
+          : 'comfortable',
+      }
+    }
+
+    return persistedState
+  },
+}
+\end{lstlisting}
+
+\codigo{version: 1} descreve o formato atual. Quando a versão armazenada é
+diferente, \codigo{migrate} recebe o conteúdo antigo e sua versão. A função deve
+devolver dados compatíveis com o contrato atual.
+
+Uma migração não é necessária para qualquer alteração interna da store. Ela é
+necessária quando muda o formato da parcela persistida. Adicionar uma ação, por
+exemplo, não altera o JSON selecionado por \codigo{partialize}.
+
+Migrações devem ser pequenas, determinísticas e capazes de lidar com dados
+antigos. Se uma fotografia não puder ser convertida com segurança, restaurar os
+valores padrão pode ser melhor que iniciar a aplicação num estado inválido.
+
+\section{Hidratação: o encontro de duas fotografias}
+
+Hidratação é o processo de ler o estado persistido e combiná-lo com o estado
+inicial da store. No DevPanel executado com Vite e \codigo{localStorage}, o
+armazenamento é síncrono e a restauração acontece durante a criação da store.
+
+O fluxo possui duas fontes temporárias:
+
+\begin{enumerate}
+  \item o código cria tema claro, densidade confortável e Drawer fechado;
+  \item \codigo{persist} procura a chave no storage;
+  \item encontra tema escuro e densidade compacta da sessão anterior;
+  \item combina os dados persistidos com o estado atual;
+  \item ações e campos não persistidos continuam vindo da criadora.
+\end{enumerate}
+
+A combinação padrão é rasa. Se persistirmos parcialmente um objeto aninhado, a
+parcela antiga pode substituir o objeto atual inteiro. Por isso, preferências
+planas tornam esse contrato mais previsível; estruturas aninhadas podem exigir
+uma função de combinação explícita.
+
+Com um armazenamento assíncrono, a primeira leitura pode ocorrer antes do fim da
+hidratação. Interfaces que dependem da preferência no primeiro quadro precisam
+considerar um estado de ``ainda não hidratado''. Em aplicações renderizadas no
+servidor, o assunto também envolve consistência entre HTML inicial e cliente;
+vamos tratar essa fronteira no Capítulo~17.
+
+\section{O que não deve ser persistido}
+
+Uma lista curta ajuda o time durante a revisão:
+
+\begin{itemize}
+  \item não persista valores que podem ser derivados de outros já salvos;
+  \item não persista respostas remotas apenas para improvisar um cache;
+  \item não persista estados transitórios sem expectativa clara de retomada;
+  \item não persista dados sensíveis por conveniência;
+  \item não persista campos ``talvez úteis'' sem política de expiração e migração.
+\end{itemize}
+
+Um rascunho de formulário pode merecer recuperação. Um modal aberto normalmente
+não merece. A diferença não está no tipo TypeScript; ambos podem ser booleanos
+ou strings. Está na experiência que o produto promete quando a pessoa retorna.
+
+Persistência também cria responsabilidade operacional. Dados antigos permanecem
+em navegadores que a equipe não controla. Cada campo salvo aumenta o contrato de
+compatibilidade das próximas versões.
+
+\section{Exercício: lembre a densidade, esqueça o Drawer}
+
+\begin{tarefa}
+O produto pediu que a densidade compacta continue selecionada depois de fechar e
+abrir o navegador. O Drawer de notificações, porém, deve sempre iniciar fechado.
+Adicione \codigo{persist} à store, use \codigo{partialize} para declarar os dados
+permitidos e confirme o comportamento após recarregar a página.
+\end{tarefa}
+
+Depois da implementação, registre:
+
+\begin{enumerate}
+  \item qual chave foi criada no storage;
+  \item quais campos aparecem no JSON persistido;
+  \item por que o Drawer volta fechado;
+  \item qual mudança futura exigiria uma migração;
+  \item qual preferência deveria viver na conta, e não apenas no navegador.
+\end{enumerate}
+
+\espacoresposta{9}
+
+\begin{resumo}
+\begin{itemize}
+  \item Estado em memória e estado persistido possuem ciclos de vida distintos.
+  \item \codigo{persist} conecta a store a um mecanismo de armazenamento.
+  \item \codigo{partialize} declara a parcela autorizada a sobreviver.
+  \item Storage local é adequado para preferências pequenas, não para segredos.
+  \item \codigo{version} e \codigo{migrate} protegem mudanças de formato.
+  \item Hidratação combina a fotografia persistida com o estado atual.
+  \item Persistir um campo cria um contrato de experiência e compatibilidade.
+\end{itemize}
+\end{resumo}
+
+Com preferências persistidas, o DevPanel agora possui mudanças que atravessam
+sessões. Na próxima parte, começaremos a torná-las observáveis e a organizar as
+stores para que o time consiga manter esse crescimento.

@@ -54,7 +54,10 @@ Essas situações não são apenas detalhes visuais. Elas dependem de uma ação
 aconteceu antes. Depois do clique, a próxima renderização precisa ser diferente
 da anterior. É nesse momento que surge o estado.
 
-\ilustracaopendente{ch01-diagrama-interface-estado}{Duas fotografias do Dashboard: antes e depois de dispensar o aviso, ligadas pela ação de clique.}
+\imagemcapitulo
+  {ch01-diagrama-interface-estado}
+  {O clique altera o estado e produz uma nova fotografia do Dashboard.}
+  {interface-estado}
 
 Uma forma prática de pensar é imaginar cada renderização como uma fotografia da
 interface. O código descreve como a fotografia deve parecer para os dados
@@ -142,7 +145,10 @@ durante a renderização.
 \codigo{isNoticeVisible} muda após uma interação, precisa sobreviver à
 renderização e altera o resultado visual. Esse valor é estado.
 
-\ilustracaopendente{ch01-quadro-estado-derivado-constante}{Quadro de decisão comparando constante, entrada, valor derivado e estado com exemplos do WelcomeNotice.}
+\imagemcapitulo
+  {ch01-quadro-estado-derivado-constante}
+  {Constante, entrada, valor derivado e estado possuem naturezas diferentes.}
+  {estado-derivado-constante}
 
 \begin{decisao}
 Se um valor pode ser calculado usando as entradas e os estados que já existem,

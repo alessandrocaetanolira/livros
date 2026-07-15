@@ -5,12 +5,9 @@ ferramenta principal e o projeto DevPanel como fio condutor.
 
 ## Estado atual
 
-O projeto está na fase de arquitetura. Leia `ARQUITETURA.md` antes de escrever
-um capítulo: o documento registra a pergunta central, a única evolução do
-DevPanel, o conceito novo, a tarefa prática e todas as ilustrações planejadas.
-
-Os arquivos em `chapters/` são marcadores editoriais, ainda sem conteúdo. As
-inclusões em `main.tex` permanecem comentadas até cada capítulo ser escrito.
+A arquitetura completa está registrada em `ARQUITETURA.md`. Os capítulos 1 a 10
+estão escritos e ativos em `main.tex`; os demais permanecem como marcadores
+editoriais e serão incluídos progressivamente.
 
 ## Formato editorial obrigatório
 

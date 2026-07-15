@@ -1,3 +1,325 @@
-% Pergunta: quem deve conhecer as regras de mudança?
-% DevPanel: filtros do Dashboard.
-% Conceito: ações semânticas e imutabilidade.
+\capitulocapa{images/cap-8.png}{Como atualizar estado sem espalhar regras?}
+\label{chap:acoes-atualizacoes}
+
+\section{O filtro que cada tela atualizava de um jeito}
+
+\begin{historia}
+O Dashboard do DevPanel ganhou uma central de filtros. A primeira versão tinha
+três controles: busca por texto, situação da conta e período de atividade.
+
+A equipe criou uma store, expôs o objeto \codigo{filters} e uma ação genérica
+chamada \codigo{setFilters}. O painel lateral usava essa ação para trocar a
+situacao, a busca montava outro objeto e o botão ``Limpar'' decidia quais valores
+deveriam voltar ao padrão.
+
+Tudo funcionou até o período padrão mudar de sete para trinta dias. O painel foi
+atualizado, mas o botão de limpar continuou restaurando sete. Uma exportação
+rápida ainda apagava o período por completo. A store era a fonte única dos
+dados, mas as regras estavam duplicadas nos consumidores.
+\end{historia}
+
+\imagemcapitulo
+  {ch08-fluxo-acao-dominio-review}
+  {Ações de domínio substituem cópias divergentes por um único próximo estado.}
+  {fluxo-acao-dominio}
+
+Mover um valor para Zustand resolve onde ele vive. Ainda precisamos decidir
+quem conhece as regras de mudança. Se cada componente constrói o próximo estado,
+a store vira apenas um recipiente compartilhado.
+
+\section{O atalho habitual: um setter genérico}
+
+É comum começar com um contrato semelhante a este:
+
+\begin{lstlisting}[caption={Um contrato que entrega as regras aos consumidores.}]
+type DashboardFilterStore = {
+  filters: DashboardFilters
+  setFilters: (filters: DashboardFilters) => void
+}
+\end{lstlisting}
+
+O componente precisa conhecer o objeto inteiro para alterar uma parte:
+
+\begin{lstlisting}
+setFilters({
+  ...filters,
+  status: 'active',
+})
+\end{lstlisting}
+
+O código parece pequeno, mas transfere duas responsabilidades para a tela. Ela
+precisa saber como copiar o estado atual e quais combinações são válidas. Outro
+componente pode esquecer o espalhamento e apagar campos que não pretendia mudar.
+
+Uma variação expõe \codigo{setStatus}, \codigo{setSearch} e
+\codigo{setPeriod}. Os nomes são melhores, porém ainda podem representar somente
+atribuições. O passo importante não é trocar ``set'' por outro prefixo; é fazer
+a ação expressar uma intenção e proteger uma regra.
+
+\section{Definindo o estado antes das ações}
+
+Os filtros do Dashboard possuem um vocabulário pequeno:
+
+\begin{lstlisting}[caption={Tipos e valores iniciais dos filtros.},label={lst:dashboard-filter-types}]
+type AccountStatus = 'all' | 'active' | 'invited' | 'blocked'
+type ActivityPeriod = '7d' | '30d' | '90d'
+
+type DashboardFilters = {
+  search: string
+  status: AccountStatus
+  period: ActivityPeriod
+}
+
+const DEFAULT_FILTERS: DashboardFilters = {
+  search: '',
+  status: 'all',
+  period: '30d',
+}
+\end{lstlisting}
+
+O período padrão aparece uma única vez. Esse objeto descreve o estado para o qual
+o produto deseja voltar, não apenas os valores usados na primeira renderização.
+
+Poderíamos guardar cada campo no primeiro nível da store. Agrupá-los em
+\codigo{filters} comunica que formam uma unidade de domínio e permite entregar
+esse objeto à camada que monta a consulta. A escolha traz uma consequência:
+como \codigo{filters} é um objeto aninhado, suas atualizações precisam criar um
+novo objeto.
+
+\section{Ações que preservam o contrato}
+
+Agora definimos as operações permitidas:
+
+\begin{lstlisting}[caption={Contrato orientado às intenções do Dashboard.}]
+type DashboardFilterActions = {
+  changeSearch: (search: string) => void
+  selectStatus: (status: AccountStatus) => void
+  selectPeriod: (period: ActivityPeriod) => void
+  clearFilters: () => void
+}
+
+type DashboardFilterStore = {
+  filters: DashboardFilters
+} & DashboardFilterActions
+\end{lstlisting}
+
+Essas ações não expõem a possibilidade de substituir o objeto inteiro por uma
+combinação arbitrária. Cada uma recebe apenas a informação necessária para a
+interação que representa.
+
+O contrato também ajuda o TypeScript. \codigo{selectPeriod('today')} não
+compila, pois ``today'' não pertence ao conjunto de períodos aceitos pelo
+produto. Ainda assim, tipos não substituem regras: é \codigo{clearFilters} que
+decide como o estado deve ser restaurado.
+
+\begin{decisao}
+Exponha operações que os consumidores podem solicitar com segurança. Quando uma
+regra mudar, deve existir um lugar óbvio para atualizá-la.
+\end{decisao}
+
+\section{Implementando atualizações funcionais}
+
+A store completa usa a forma funcional de \codigo{set} para produzir cada novo
+objeto a partir da fotografia mais recente:
+
+\begin{lstlisting}[caption={Store dos filtros com ações semânticas.},label={lst:dashboard-filter-store}]
+import { create } from 'zustand'
+
+export const useDashboardFilterStore =
+  create<DashboardFilterStore>()((set) => ({
+    filters: DEFAULT_FILTERS,
+
+    changeSearch: (search) =>
+      set((state) => ({
+        filters: { ...state.filters, search },
+      })),
+
+    selectStatus: (status) =>
+      set((state) => ({
+        filters: { ...state.filters, status },
+      })),
+
+    selectPeriod: (period) =>
+      set((state) => ({
+        filters: { ...state.filters, period },
+      })),
+
+    clearFilters: () =>
+      set({ filters: { ...DEFAULT_FILTERS } }),
+  }))
+\end{lstlisting}
+
+Em \codigo{changeSearch}, o próximo valor depende do restante do objeto atual.
+A função recebida por \codigo{set} acessa a versão mais recente da store, copia
+\codigo{state.filters} e substitui apenas \codigo{search}.
+
+Não precisamos espalhar toda a store. Zustand combina por padrão a parcela
+devolvida por \codigo{set} no primeiro nível. Essa combinação é rasa: ao trocar
+\codigo{filters}, precisamos copiar explicitamente os campos internos que devem
+permanecer.
+
+\codigo{clearFilters} não depende dos filtros atuais. Ela cria um novo objeto a
+partir de \codigo{DEFAULT\_FILTERS}. Assim, busca e situação são limpas e o
+período volta para trinta dias. Quando o produto alterar o padrão novamente, a
+inicialização e a limpeza continuarão alinhadas.
+
+\imagemcapitulo
+  {ch08-objeto-imutabilidade-review}
+  {Uma atualização imutável preserva o objeto anterior e cria uma nova referência.}
+  {objeto-imutabilidade}
+
+\section{Por que não alterar o objeto diretamente?}
+
+Objetos JavaScript são mutáveis, então este código é possível, mas está errado:
+
+\begin{lstlisting}
+selectStatus: (status) =>
+  set((state) => {
+    state.filters.status = status
+    return { filters: state.filters }
+  })
+\end{lstlisting}
+
+O código modifica a fotografia atual e devolve a mesma referência de
+\codigo{filters}. Isso torna mudanças mais difíceis de rastrear e pode impedir
+que assinaturas baseadas em igualdade reconheçam um novo valor.
+
+Imutabilidade aqui não significa copiar a aplicação inteira. Copiamos apenas o
+caminho que muda. Para um objeto com um nível, o espalhamento é suficiente. Se
+o modelo exigir várias camadas de cópia em toda ação, vale primeiro perguntar se
+o estado está aninhado demais antes de adicionar outra ferramenta.
+
+\section{Conectando a central de filtros}
+
+O painel visual assina os campos e ações que utiliza:
+
+\begin{lstlisting}[caption={Consumidor envia intenções, sem montar o próximo estado.}]
+export function FiltersPanel() {
+  const filters = useDashboardFilterStore(
+    (store) => store.filters,
+  )
+  const selectStatus = useDashboardFilterStore(
+    (store) => store.selectStatus,
+  )
+  const selectPeriod = useDashboardFilterStore(
+    (store) => store.selectPeriod,
+  )
+  const clearFilters = useDashboardFilterStore(
+    (store) => store.clearFilters,
+  )
+
+  return (
+    <aside>
+      <StatusFilter
+        value={filters.status}
+        onChange={selectStatus}
+      />
+      <PeriodFilter
+        value={filters.period}
+        onChange={selectPeriod}
+      />
+      <button type="button" onClick={clearFilters}>
+        Limpar filtros
+      </button>
+    </aside>
+  )
+}
+\end{lstlisting}
+
+O componente conhece os controles e os eventos da interface. Ele não sabe qual
+é o período padrão nem como preservar outros campos. Se a regra de limpeza
+mudar, esse JSX permanece igual.
+
+Selecionar o objeto completo é aceitável neste momento porque o painel exibe
+todos os filtros. Componentes menores devem selecionar somente o valor que
+usam. No próximo capítulo veremos com cuidado como a forma de um selector afeta
+renderizações.
+
+\section{Valores derivados não precisam de uma ação}
+
+O botão pode informar quantos filtros estão realmente ativos. Seria tentador
+guardar \codigo{activeFilterCount} na store e atualizá-lo em todas as ações. Isso
+criaria duas fontes para a mesma verdade.
+
+O total pode ser calculado a partir dos filtros:
+
+\begin{lstlisting}[caption={Valor derivado calculado a partir da fonte de verdade.}]
+export function getActiveFilterCount(filters: DashboardFilters) {
+  return Number(filters.search.trim() !== '')
+    + Number(filters.status !== DEFAULT_FILTERS.status)
+    + Number(filters.period !== DEFAULT_FILTERS.period)
+}
+
+const activeFilterCount = useDashboardFilterStore(
+  (store) => getActiveFilterCount(store.filters),
+)
+\end{lstlisting}
+
+Não existe ação \codigo{setActiveFilterCount}. Qualquer mudança em
+\codigo{filters} produz o total correspondente. A regra permanece testável como
+uma função simples e não corre o risco de ficar dessincronizada.
+
+Nem todo cálculo deve ser colocado dentro do arquivo da store. Ele pertence
+aqui porque traduz o significado de ``filtro ativo'' e é reutilizável. Uma
+formatação usada por um único componente pode continuar próxima desse
+componente.
+
+\section{Até onde uma ação deve ir?}
+
+Centralizar regras não significa esconder toda a aplicação dentro da store. A
+ação deve coordenar mudanças do estado que pertence àquele domínio.
+
+\codigo{clearFilters} pode restaurar os filtros. Ela não precisa manipular o
+DOM, navegar para outra rota nem fazer uma consulta diretamente. A camada de
+consulta pode observar os filtros e buscar os dados correspondentes; o botão
+pode cuidar de foco e acessibilidade.
+
+Também devemos evitar uma ação única como \codigo{updateDashboard}. Um nome
+amplo não revela o evento, aceita responsabilidades futuras demais e devolve ao
+consumidor a obrigação de conhecer a estrutura interna.
+
+Uma boa fronteira deixa respostas simples:
+
+\begin{itemize}
+  \item a interface traduz eventos em chamadas de ações;
+  \item a store preserva as regras de mudança de seus dados;
+  \item valores derivados são calculados da fonte de verdade;
+  \item efeitos externos permanecem na camada apropriada.
+\end{itemize}
+
+\section{Exercício: limpe sem perder o padrão}
+
+\begin{tarefa}
+O produto pediu que o botão ``Limpar filtros'' remova a busca e volte a situação
+para ``Todas'', mas mantenha o período padrão de trinta dias. Implemente
+\codigo{clearFilters} sem chamar três ações em sequência e sem repetir os valores
+padrão dentro do componente.
+\end{tarefa}
+
+Depois da implementação, registre:
+
+\begin{enumerate}
+  \item onde o período padrão foi definido;
+  \item por que o componente não recebe um \codigo{setFilters} genérico;
+  \item quais referências são novas depois da limpeza;
+  \item por que o total de filtros ativos não foi armazenado;
+  \item qual responsabilidade deve continuar fora da store.
+\end{enumerate}
+
+\espacoresposta{9}
+
+\begin{resumo}
+\begin{itemize}
+  \item Uma fonte única de estado não garante uma fonte única de regras.
+  \item Ações semânticas descrevem intenções e protegem invariantes.
+  \item A forma funcional de \codigo{set} usa a fotografia mais recente.
+  \item Zustand combina atualizações apenas no primeiro nível da store.
+  \item Objetos aninhados devem ser atualizados com novas referências.
+  \item Valores calculáveis devem ser derivados, não sincronizados manualmente.
+  \item A store coordena seu domínio sem absorver interface e efeitos externos.
+\end{itemize}
+\end{resumo}
+
+No próximo capítulo, os indicadores do Dashboard mostrarão outro detalhe: mesmo
+com ações bem definidas, um selector amplo pode fazer componentes atualizarem
+quando o valor que exibem não mudou.

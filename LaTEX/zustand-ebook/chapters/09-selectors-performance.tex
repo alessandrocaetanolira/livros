@@ -1,3 +1,305 @@
-% Pergunta: por que um componente atualiza quando seu valor não mudou?
-% DevPanel: indicadores independentes.
-% Conceito: selectors, igualdade e useShallow.
+\capitulocapa{images/cap-9.png}{Como evitar renderizações desnecessárias?}
+\label{chap:selectors-performance}
+
+\section{O card que piscava sem mudar}
+
+\begin{historia}
+O Dashboard ganhou três indicadores atualizados de forma independente: total de
+usuários, vendas do mês e chamados em aberto. Cada card lia os dados da mesma
+store e mostrava um pequeno destaque visual quando renderizava.
+
+Durante um teste, a equipe simulou uma nova venda. O valor de vendas mudou, como
+esperado, mas o card de usuários também piscou. O número continuava exatamente
+o mesmo. Em seguida, a atualização de um chamado fez os três cards renderizarem.
+
+Alguém concluiu que a store estava grande demais. Outra pessoa quis aplicar
+\codigo{memo} em todos os componentes. Antes de dividir arquivos ou adicionar
+memoização, a equipe abriu o Profiler e fez uma pergunta mais simples: o que
+cada card assinou?
+\end{historia}
+
+\imagemcapitulo
+  {ch09-diagrama-assinaturas}
+  {A store inteira atualiza três cards; selectors mínimos atualizam apenas o necessário.}
+  {diagrama-assinaturas}
+
+Uma renderização não é um erro por si só. React renderiza para descobrir como a
+interface deve ficar. O problema começa quando assinaturas amplas espalham
+trabalho sem relação com a mudança e tornam componentes caros mais difíceis de
+investigar.
+
+\section{A store notifica; o selector decide o interesse}
+
+Vamos representar os indicadores com uma store pequena:
+
+\begin{lstlisting}[caption={Indicadores atualizados de forma independente.},label={lst:metric-store}]
+import { create } from 'zustand'
+
+type DashboardMetricStore = {
+  userCount: number
+  monthlySales: number
+  openTickets: number
+  updateUserCount: (value: number) => void
+  updateMonthlySales: (value: number) => void
+  updateOpenTickets: (value: number) => void
+}
+
+export const useDashboardMetricStore =
+  create<DashboardMetricStore>()((set) => ({
+    userCount: 1284,
+    monthlySales: 48320,
+    openTickets: 17,
+    updateUserCount: (userCount) => set({ userCount }),
+    updateMonthlySales: (monthlySales) => set({ monthlySales }),
+    updateOpenTickets: (openTickets) => set({ openTickets }),
+  }))
+\end{lstlisting}
+
+Quando \codigo{updateMonthlySales} executa, a store produz uma nova fotografia e
+notifica suas assinaturas. Isso não significa que todo consumidor precise
+renderizar. Para cada assinatura, Zustand executa o selector e compara o
+resultado novo com o anterior.
+
+Por padrão, essa comparação usa \codigo{Object.is}. Números iguais, strings
+iguais e a mesma referência de objeto são considerados o mesmo resultado. Se o
+resultado selecionado não mudou, o componente não precisa atualizar por causa
+da store.
+
+\section{O problema da assinatura sem selector}
+
+O primeiro card foi escrito assim:
+
+\begin{lstlisting}[caption={O card assina a fotografia completa da store.}]
+export function UserMetricCard() {
+  const store = useDashboardMetricStore()
+
+  return (
+    <MetricCard label="Usuários" value={store.userCount} />
+  )
+}
+\end{lstlisting}
+
+O componente usa apenas \codigo{userCount}, mas assinou o objeto inteiro. Sempre
+que qualquer campo muda, a fotografia da store possui outra referência. Para
+essa assinatura, o resultado realmente mudou, mesmo que o trecho lido no JSX
+continue igual.
+
+Desestruturar não torna a assinatura menor:
+
+\begin{lstlisting}
+const { userCount } = useDashboardMetricStore()
+\end{lstlisting}
+
+A desestruturação acontece depois que o hook devolve a store completa. O React
+não consegue deduzir que o componente deseja observar somente uma propriedade.
+
+\begin{decisao}
+O tamanho da assinatura é definido pelo retorno do selector, não pela quantidade
+de propriedades usadas depois da chamada do hook.
+\end{decisao}
+
+\section{Selecione o menor valor útil}
+
+O card precisa de um número. Seu selector deve devolver esse número:
+
+\begin{lstlisting}[caption={Assinatura mínima do card de usuários.},label={lst:user-minimal-selector}]
+export function UserMetricCard() {
+  const userCount = useDashboardMetricStore(
+    (store) => store.userCount,
+  )
+
+  return <MetricCard label="Usuários" value={userCount} />
+}
+\end{lstlisting}
+
+Quando vendas mudam, o selector roda novamente e devolve o mesmo
+\codigo{userCount}. \codigo{Object.is(1284, 1284)} resulta em verdadeiro; a
+assinatura não solicita outra renderização do card.
+
+Os demais indicadores seguem a mesma fronteira:
+
+\begin{lstlisting}
+const monthlySales = useDashboardMetricStore(
+  (store) => store.monthlySales,
+)
+
+const openTickets = useDashboardMetricStore(
+  (store) => store.openTickets,
+)
+\end{lstlisting}
+
+Selectors não servem apenas para performance. Eles registram a dependência do
+componente. Ao ler o código, sabemos qual mudança pode afetar cada card.
+
+\imagemcapitulo
+  {ch09-timeline-renderizacoes-2}
+  {Selectors podem ser avaliados sem solicitar a renderização de seus componentes.}
+  {timeline-renderizacoes}
+
+\section{Executar o selector não é renderizar o componente}
+
+Após cada atualização, a store precisa verificar o resultado das assinaturas.
+Por isso, selectors podem ser executados mesmo quando o componente não
+renderiza. São trabalhos diferentes:
+
+\begin{enumerate}
+  \item a ação atualiza a store;
+  \item as assinaturas são notificadas;
+  \item cada selector calcula seu próximo resultado;
+  \item o resultado é comparado com o anterior;
+  \item somente resultados considerados diferentes solicitam renderização.
+\end{enumerate}
+
+Isso também explica por que um selector deve ser puro e barato. Ele não deve
+alterar estado, chamar API nem produzir efeitos. Um cálculo pequeno é adequado;
+uma transformação realmente cara pode exigir memoização específica, depois de
+ser medida.
+
+\section{Objetos novos parecem resultados novos}
+
+Um cabeçalho do Dashboard precisa de dois valores. Podemos tentar reuni-los:
+
+\begin{lstlisting}[caption={Um novo objeto é criado a cada avaliação.}]
+const summary = useDashboardMetricStore((store) => ({
+  userCount: store.userCount,
+  openTickets: store.openTickets,
+}))
+\end{lstlisting}
+
+Esse selector cria um objeto novo. Mesmo quando os dois campos possuem os mesmos
+valores, a referência do resultado é diferente. Com a igualdade padrão,
+\codigo{Object.is} não considera dois objetos separados como iguais.
+
+Nas versões atuais do Zustand, selectors que produzem uma nova referência a
+cada avaliação também podem gerar um ciclo de atualizações, em vez de apenas uma
+renderização adicional. A saída do selector precisa ser estável quando os dados
+selecionados não mudaram.
+
+A solução mais explícita é manter assinaturas separadas:
+
+\begin{lstlisting}
+const userCount = useDashboardMetricStore(
+  (store) => store.userCount,
+)
+const openTickets = useDashboardMetricStore(
+  (store) => store.openTickets,
+)
+\end{lstlisting}
+
+Para poucos valores, essa forma é clara, segura e normalmente suficiente.
+
+\section{Quando usar useShallow}
+
+Às vezes, devolver uma pequena coleção é mais conveniente. Nesse caso,
+\codigo{useShallow} cria uma versão memoizada do selector e compara os elementos
+do resultado no primeiro nível:
+
+\begin{lstlisting}[caption={Dois valores reunidos com comparação rasa.},label={lst:summary-use-shallow}]
+import { useShallow } from 'zustand/react/shallow'
+
+export function DashboardSummary() {
+  const { userCount, openTickets } =
+    useDashboardMetricStore(
+      useShallow((store) => ({
+        userCount: store.userCount,
+        openTickets: store.openTickets,
+      })),
+    )
+
+  return (
+    <p>
+      {userCount} usuários e {openTickets} chamados
+    </p>
+  )
+}
+\end{lstlisting}
+
+Se vendas mudarem, o selector cria outro objeto, mas seus campos selecionados
+continuam iguais. A comparação rasa considera o resultado equivalente e
+preserva uma referência estável para o consumidor.
+
+Rasa significa primeiro nível. Se um campo selecionado contiver outro objeto
+que foi recriado, \codigo{useShallow} perceberá a nova referência, não fará uma
+comparação profunda de todos os seus descendentes. Isso é uma característica,
+não uma falha: comparações profundas escondem custo e podem mascarar um modelo
+de estado instável.
+
+\section{Escolhendo entre selectors separados e useShallow}
+
+Não precisamos envolver todo selector com \codigo{useShallow}. Um selector que
+devolve um número ou uma referência estável já funciona bem com a igualdade
+padrão.
+
+Uma regra prática para o DevPanel é:
+
+\begin{itemize}
+  \item devolva diretamente um valor quando o componente precisa de um valor;
+  \item use selectors separados quando isso deixa as dependências mais claras;
+  \item considere \codigo{useShallow} ao reunir poucos campos num objeto ou
+    array;
+  \item reveja o modelo quando depender de comparações profundas frequentes.
+\end{itemize}
+
+\imagemcapitulo
+  {ch09-comparacao-selector}
+  {Store inteira, valor mínimo e coleção rasa criam fronteiras de atualização diferentes.}
+  {comparacao-selector}
+
+\section{Meça antes de otimizar}
+
+Evitar assinaturas da store inteira é uma boa fronteira mesmo em componentes
+simples. A partir daí, performance deve ser tratada com evidência.
+
+O React DevTools Profiler mostra quais componentes renderizaram e quanto tempo o
+trabalho consumiu. Durante o desenvolvimento, um \codigo{console.count} pontual
+também ajuda a confirmar uma hipótese, desde que seja removido depois do
+diagnóstico.
+
+Uma renderização rápida de um texto pode custar menos que a complexidade de uma
+abstração. Já uma tabela grande, um gráfico ou uma árvore extensa merecem
+atenção. O objetivo não é chegar a zero renderizações, mas manter cada atualização
+restrita aos consumidores que dependem dela.
+
+\codigo{React.memo} também não corrige uma assinatura ampla dentro do próprio
+componente. Ele compara propriedades recebidas do componente pai; uma mudança
+na store assinada pelo componente continua sendo uma atualização própria. O
+primeiro ajuste deve acontecer na dependência que declaramos ao hook.
+
+\section{Exercício: isole o card de usuários}
+
+\begin{tarefa}
+O time percebeu no Profiler que \codigo{UserMetricCard} renderiza sempre que uma
+nova venda é registrada. Altere a assinatura para que atualizar
+\codigo{monthlySales} não renderize o card de usuários. Não divida a store e não
+adicione \codigo{React.memo}; corrija o selector e confirme o resultado no
+Profiler.
+\end{tarefa}
+
+Depois da alteração, registre:
+
+\begin{enumerate}
+  \item qual valor o card assinava antes;
+  \item qual valor o selector devolve agora;
+  \item por que a atualização de vendas ainda executa esse selector;
+  \item por que sua execução não exige uma renderização;
+  \item em qual consumidor \codigo{useShallow} seria justificável.
+\end{enumerate}
+
+\espacoresposta{9}
+
+\begin{resumo}
+\begin{itemize}
+  \item A store notifica assinaturas; o selector define o interesse de cada uma.
+  \item Assinar a store inteira liga o componente a qualquer atualização.
+  \item A igualdade padrão compara resultados com \codigo{Object.is}.
+  \item Selecionar um valor mínimo torna dependências explícitas e estáveis.
+  \item Objetos criados no selector possuem novas referências.
+  \item \codigo{useShallow} compara coleções no primeiro nível.
+  \item Executar um selector não significa renderizar seu componente.
+  \item O Profiler deve orientar otimizações além das boas fronteiras básicas.
+\end{itemize}
+\end{resumo}
+
+No próximo capítulo, o tema e a densidade do DevPanel precisarão sobreviver ao
+fechamento do navegador. Isso muda a pergunta: não apenas quem assina o estado,
+mas por quanto tempo ele deve existir.

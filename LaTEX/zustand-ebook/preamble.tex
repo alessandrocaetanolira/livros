@@ -52,6 +52,7 @@
   citecolor=CodeGreen,
   urlcolor=MidnightBlue,
   pdftitle={Estado sem Drama},
+  pdfauthor={Caetano},
   pdfsubject={Zustand e decisões de estado para times pequenos}
 }
 
@@ -184,9 +185,17 @@
   \begin{figure}[htbp]
     \centering
     \IfFileExists{images/#1.pdf}{%
-      \includegraphics[width=\linewidth]{images/#1.pdf}%
+      \includegraphics[
+        width=\linewidth,
+        height=0.78\textheight,
+        keepaspectratio
+      ]{images/#1.pdf}%
     }{%
-      \includegraphics[width=\linewidth]{images/#1.png}%
+      \includegraphics[
+        width=\linewidth,
+        height=0.78\textheight,
+        keepaspectratio
+      ]{images/#1.png}%
     }
     \caption{#2}
     \label{fig:#3}
@@ -214,11 +223,30 @@
   \end{figure}%
 }
 
+% Página pautada usada no acerto de capítulos para impressão frente e verso.
+% Em vez de deixar o verso vazio, oferece uma área útil para anotações.
+\newcommand{\paginadeanotacoes}{%
+  \thispagestyle{plain}%
+  \vspace*{5mm}%
+  {\centering\sffamily\bfseries\large Anotações\par}%
+  \vspace{3mm}%
+  {\centering\small Registre dúvidas, decisões e ideias para experimentar no DevPanel.\par}%
+  \vspace{8mm}%
+  \begingroup
+    \color{gray!45}%
+    \foreach \linha in {1,...,18}{%
+      \noindent\rule{\textwidth}{0.35pt}\par\vspace{6.2mm}%
+    }%
+  \endgroup
+  \clearpage
+}
+
 % Página de abertura ilustrada. A arte fica dentro da zona segura de impressão:
 % 12 mm no lado interno, 8 mm no externo, 14 mm abaixo e mais de 10 mm acima.
 % A faixa inferior original é recortada para remover fólio e título incorporados.
 \newcommand{\capitulocapa}[3][0]{%
-  \cleardoublepage
+  \clearpage
+  \ifodd\value{page}\else\paginadeanotacoes\fi
   \refstepcounter{chapter}%
   \phantomsection
   \addcontentsline{toc}{chapter}{\protect\numberline{\thechapter}#3}%
@@ -255,6 +283,22 @@
     }%
     \null
   \end{titlepage}%
+}
+
+% Contracapa geral com o mesmo tratamento da capa, sem fólio ou cabeçalho.
+\newcommand{\livrocontracapa}[1]{%
+  \clearpage
+  \thispagestyle{empty}%
+  \AddToShipoutPictureBG*{%
+    \AtPageLowerLeft{\color{CoverBlue}\rule{\paperwidth}{\paperheight}}%
+    \AtPageLowerLeft{%
+      \put(0,\LenToUnit{4mm}){%
+        \makebox[\paperwidth][c]{\includegraphics[height=202mm]{#1}}%
+      }%
+    }%
+  }%
+  \null
+  \clearpage
 }
 
 \newcommand{\arquivo}[1]{\texttt{#1}}
