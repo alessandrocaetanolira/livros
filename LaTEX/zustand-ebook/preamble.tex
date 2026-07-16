@@ -3,7 +3,8 @@
 \usepackage{microtype}
 
 % Formato físico obrigatório: ISO A5, 148 × 210 mm.
-% Margens espelhadas consideram encadernação e leitura em páginas opostas.
+% Margens espelhadas consideram leitura em páginas opostas. O bindingoffset
+% reserva 5 mm adicionais junto à lombada, totalizando 23 mm no lado interno.
 \usepackage[
   paperwidth=148mm,
   paperheight=210mm,
@@ -11,7 +12,7 @@
   outer=14mm,
   top=16mm,
   bottom=18mm,
-  bindingoffset=3mm,
+  bindingoffset=5mm,
   headheight=13pt,
   headsep=5mm,
   footskip=9mm
@@ -223,30 +224,20 @@
   \end{figure}%
 }
 
-% Página pautada usada no acerto de capítulos para impressão frente e verso.
-% Em vez de deixar o verso vazio, oferece uma área útil para anotações.
-\newcommand{\paginadeanotacoes}{%
-  \thispagestyle{plain}%
-  \vspace*{5mm}%
-  {\centering\sffamily\bfseries\large Anotações\par}%
-  \vspace{3mm}%
-  {\centering\small Registre dúvidas, decisões e ideias para experimentar no DevPanel.\par}%
-  \vspace{8mm}%
-  \begingroup
-    \color{gray!45}%
-    \foreach \linha in {1,...,18}{%
-      \noindent\rule{\textwidth}{0.35pt}\par\vspace{6.2mm}%
-    }%
-  \endgroup
+% Página inteiramente branca, sem cabeçalho nem fólio.
+\newcommand{\paginabranca}{%
+  \thispagestyle{empty}%
+  \null
   \clearpage
 }
 
 % Página de abertura ilustrada. A arte fica dentro da zona segura de impressão:
 % 12 mm no lado interno, 8 mm no externo, 14 mm abaixo e mais de 10 mm acima.
 % A faixa inferior original é recortada para remover fólio e título incorporados.
+% Toda abertura ocupa uma página ímpar e tem o verso completamente branco.
 \newcommand{\capitulocapa}[3][0]{%
   \clearpage
-  \ifodd\value{page}\else\paginadeanotacoes\fi
+  \ifodd\value{page}\else\paginabranca\fi
   \refstepcounter{chapter}%
   \phantomsection
   \addcontentsline{toc}{chapter}{\protect\numberline{\thechapter}#3}%
@@ -267,6 +258,7 @@
   }%
   \null
   \clearpage
+  \paginabranca
 }
 
 % Capa geral: fundo até o corte e arte reduzida para preservar a zona segura.

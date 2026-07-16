@@ -1,0 +1,136 @@
+\documentclass[9pt,a6paper,twoside]{article}
+
+\usepackage[a6paper,inner=18mm,outer=8mm,top=9mm,bottom=11mm]{geometry}
+\usepackage[brazil]{babel}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{pifont}
+\usepackage{microtype}
+
+\setmainfont{TeX Gyre Pagella}
+\newfontfamily\floralfonte{TeX Gyre Chorus}
+\setlength{\parindent}{0pt}
+\pagestyle{empty}
+
+\definecolor{Coral}{HTML}{C96857}
+\definecolor{Laranja}{HTML}{DF8A4F}
+\definecolor{Pessego}{HTML}{F4D2BE}
+\definecolor{Terracota}{HTML}{9E4F46}
+\definecolor{Oliva}{HTML}{74754C}
+\definecolor{LinhaQuente}{HTML}{E6B8A5}
+\definecolor{Texto}{HTML}{6F554D}
+\pagecolor{white}
+
+\newcommand{\campo}[2][\linewidth]{%
+  {\color{Terracota}\bfseries\fontsize{6.2}{7}\selectfont #2}\par
+  \vspace{.2mm}{\color{LinhaQuente}\rule{#1}{.35pt}}}
+
+\newcommand{\campolinha}[2]{%
+  {\color{Terracota}\bfseries\fontsize{6}{7}\selectfont #1}\enspace
+  {\color{LinhaQuente}\rule{#2}{.35pt}}}
+
+\newcommand{\florcanto}[2]{%
+  \node[anchor=#1,inner sep=0pt,opacity=.30] at (#2)
+    {\includegraphics[width=17mm]{images/floral-canto-rosa.png}};}
+
+\begin{document}
+\begin{tikzpicture}[remember picture,overlay]
+  \florcanto{south east}{[xshift=-8mm,yshift=45mm]current page.south east}
+\end{tikzpicture}
+
+\begin{minipage}[t][86mm][t]{\linewidth}
+  \begin{minipage}[t]{.27\linewidth}
+    \vspace{0pt}
+    \tikz\node[draw=LinhaQuente,dashed,rounded corners=.8mm,
+      minimum width=20mm,minimum height=8mm,text=Terracota,
+      font=\bfseries\fontsize{5.2}{6}\selectfont,inner sep=.8mm]
+      {SEU LOGO AQUI};
+  \end{minipage}%
+  \begin{minipage}[t]{.45\linewidth}
+    \vspace{0pt}
+    {\floralfonte\color{Terracota}\fontsize{15}{16}\selectfont Orçamento}\par
+    {\color{Oliva}\fontsize{5.8}{6.5}\selectfont serviços e eventos}
+  \end{minipage}%
+  \begin{minipage}[t]{.26\linewidth}\raggedleft
+    \vspace{0pt}
+    \tikz[baseline=-1ex]\node[fill=Laranja!75,text=white,rounded corners=.8mm,
+      font=\bfseries\fontsize{8}{9}\selectfont,inner xsep=2mm,inner ysep=1.3mm]
+      {Nº\enspace\rule{8mm}{.3pt}};
+  \end{minipage}
+
+  \vspace{.8mm}{\color{Laranja}\rule{\linewidth}{.7pt}}\par\vspace{1.2mm}
+
+  \begin{minipage}[t]{.62\linewidth}\campo{CLIENTE}\end{minipage}\hfill
+  \begin{minipage}[t]{.34\linewidth}\campo{TELEFONE}\end{minipage}
+
+  \vspace{1mm}
+  \begin{minipage}[t]{.33\linewidth}\campo{DIA DO EVENTO}\end{minipage}\hfill
+  \begin{minipage}[t]{.29\linewidth}\campo{HORÁRIO}\end{minipage}\hfill
+  \begin{minipage}[t]{.33\linewidth}\campo{LOCAL}\end{minipage}
+
+  \vspace{1mm}
+  \begin{minipage}[t]{.48\linewidth}\campo{TIPO DE EVENTO}\end{minipage}\hfill
+  \begin{minipage}[t]{.48\linewidth}\campo{TEMA / CORES}\end{minipage}
+
+  \vspace{1.2mm}
+  {\color{Terracota}\bfseries\fontsize{6.2}{7}\selectfont SERVIÇOS, ITENS E VALORES}\par
+  \vspace{.4mm}
+  \renewcommand{\arraystretch}{.96}
+  \begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{9mm}|>{\raggedleft\arraybackslash}p{15mm}|}
+    \hline
+    \color{Terracota}\scriptsize DESCRIÇÃO & \color{Terracota}\scriptsize QTD. & \color{Terracota}\scriptsize VALOR \\
+    \hline
+    & & R\$ \\ \hline
+    & & R\$ \\ \hline
+    & & R\$ \\ \hline
+    & & R\$ \\ \hline
+  \end{tabularx}
+
+  \vspace{1mm}
+  \begin{minipage}[t]{.55\linewidth}
+    \campo{OBSERVAÇÕES}
+    \vspace{1.2mm}{\color{LinhaQuente}\rule{\linewidth}{.35pt}}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{.41\linewidth}\raggedleft
+    \campolinha{TOTAL}{18mm}\par\vspace{.8mm}
+    \campolinha{SINAL}{18mm}\par\vspace{.8mm}
+    \campolinha{SALDO}{18mm}
+  \end{minipage}
+
+  \vfill
+  {\color{Terracota}\fontsize{6.2}{7}\selectfont Forma de pagamento:}\enspace
+  {\color{LinhaQuente}\rule{34mm}{.35pt}}\hfill
+  {\color{Terracota}\fontsize{6.2}{7}\selectfont Validade:}\enspace
+  {\color{LinhaQuente}\rule{9mm}{.35pt}}
+\end{minipage}
+
+\vspace{1mm}
+\begin{tikzpicture}
+  \draw[Laranja,dash pattern=on 1.2mm off 1.2mm,line width=.45pt]
+    (0,0) -- (.99\linewidth,0);
+  \node[fill=white,text=Terracota,font=\fontsize{7}{7}\selectfont,inner xsep=1mm]
+    at (7mm,0) {\ding{34}};
+\end{tikzpicture}
+
+\vspace{.5mm}
+\begin{minipage}[t][26mm][t]{\linewidth}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=south east,inner sep=0pt,opacity=.18] at (\linewidth,-26mm)
+      {\includegraphics[width=16mm]{images/floral-canto-rosa.png}};
+  \end{tikzpicture}
+  {\floralfonte\color{Terracota}\fontsize{12}{13}\selectfont Canhoto do orçamento}\hfill
+  {\color{Laranja}\bfseries\fontsize{7}{8}\selectfont Nº \rule{9mm}{.3pt}}\par
+  \vspace{.6mm}{\color{LinhaQuente}\rule{\linewidth}{.5pt}}\par\vspace{.8mm}
+  \campolinha{CLIENTE}{43mm}\hfill\campolinha{EVENTO}{18mm}\par\vspace{1.1mm}
+  \campolinha{DATA}{18mm}\hfill\campolinha{TOTAL}{18mm}\par\vspace{1.1mm}
+  \campolinha{SINAL}{18mm}\hfill\campolinha{SALDO}{18mm}\par\vfill
+  {\color{Texto}\fontsize{6}{7}\selectfont Recebi o sinal e confirmo as informações acima.}\hfill
+  {\color{LinhaQuente}\rule{30mm}{.35pt}}\par
+  \hfill{\color{Terracota}\fontsize{5.5}{6}\selectfont assinatura}
+\end{minipage}
+
+\end{document}

@@ -1,0 +1,318 @@
+\documentclass[10pt,a5paper,twoside]{article}
+
+\usepackage[a5paper,inner=22mm,outer=12mm,top=12mm,bottom=13mm,headsep=3mm,footskip=7mm]{geometry}
+\usepackage[brazil]{babel}
+\usepackage{fontspec}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{hyperref}
+
+\setmainfont{Latin Modern Sans}
+\setmonofont[AutoFakeBold=1.5]{Latin Modern Mono}
+\setlength{\parindent}{0pt}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\color{TechMuted}\scriptsize\ttfamily fork() \textbullet\ página \thepage/\pageref*{LastPage} \textbullet\ commit()}
+
+\definecolor{TechNavy}{HTML}{14213D}
+\definecolor{TechBlue}{HTML}{2563EB}
+\definecolor{TechCyan}{HTML}{0891B2}
+\definecolor{TechGreen}{HTML}{16803A}
+\definecolor{TechPurple}{HTML}{7C3AED}
+\definecolor{TechOrange}{HTML}{C2410C}
+\definecolor{TechMuted}{HTML}{64748B}
+\definecolor{TechLight}{HTML}{E2E8F0}
+\definecolor{TechPaper}{HTML}{F8FAFC}
+\definecolor{TechAccent}{HTML}{0E7490}
+
+\hypersetup{hidelinks,pdftitle={Agenda Tech 2026 — julho a dezembro},pdfauthor={Agenda pessoal}}
+
+\newcommand{\checkbox}{\tikz[baseline=-0.55ex]\draw[TechMuted,line width=.45pt] (0,0) rectangle (1.45mm,1.45mm);}
+\newcommand{\linhaanotacao}{\par\vspace{1.55mm}\hrule height .35pt\color{TechLight}\vspace{1.55mm}}
+
+\newcommand{\etiquetalinguagem}[1]{%
+  \tikz[baseline=-0.55ex]\node[draw=TechLight,text=TechNavy,line width=.35pt,
+  font=\ttfamily\scriptsize,inner xsep=1.8mm,inner ysep=.65mm]{#1};}
+
+\newcommand{\cabecalhodiario}[5]{%
+  \begin{minipage}[t][78mm][t]{\linewidth}
+    \vspace{-1mm}
+    \begin{minipage}[t]{.68\linewidth}
+      {\color{TechNavy}\fontsize{24}{24}\selectfont\bfseries #1}\hspace{1.5mm}
+      {\color{TechNavy}\large\bfseries #2}\par
+      {\color{TechMuted}\small #3 de 2026}
+    \end{minipage}%
+    \begin{minipage}[t]{.30\linewidth}\raggedleft
+      \etiquetalinguagem{#4}\par
+      \vspace{1mm}{\color{TechMuted}\ttfamily\scriptsize <dia status="ativo">}
+    \end{minipage}
+    \vspace{1.5mm}
+    \color{TechNavy}\rule{\linewidth}{.55pt}
+
+    \vspace{1.4mm}
+    {\color{TechAccent}\bfseries\scriptsize TOP 3 PRIORIDADES}\hfill
+    {\color{TechMuted}\ttfamily\scriptsize energia: [\enspace\enspace\enspace\enspace\enspace]}
+
+    \vspace{1mm}
+    \checkbox\enspace\rule{.27\linewidth}{.35pt}\hfill
+    \checkbox\enspace\rule{.27\linewidth}{.35pt}\hfill
+    \checkbox\enspace\rule{.27\linewidth}{.35pt}
+
+    \vspace{2mm}
+    \begin{minipage}[t]{.48\linewidth}
+      {\color{TechAccent}\bfseries\scriptsize AGENDA / HORÁRIOS}\par
+      \vspace{.4mm}
+      {\scriptsize
+      08:00 \rule{.67\linewidth}{.3pt}\par\vspace{1.35mm}
+      10:00 \rule{.67\linewidth}{.3pt}\par\vspace{1.35mm}
+      12:00 \rule{.67\linewidth}{.3pt}\par\vspace{1.35mm}
+      14:00 \rule{.67\linewidth}{.3pt}\par\vspace{1.35mm}
+      16:00 \rule{.67\linewidth}{.3pt}\par\vspace{1.35mm}
+      18:00 \rule{.67\linewidth}{.3pt}}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{.48\linewidth}
+      {\color{TechAccent}\bfseries\scriptsize TASK QUEUE}\par
+      \vspace{.5mm}
+      {\scriptsize
+      \checkbox\enspace\rule{.82\linewidth}{.3pt}\par\vspace{1.45mm}
+      \checkbox\enspace\rule{.82\linewidth}{.3pt}\par\vspace{1.45mm}
+      \checkbox\enspace\rule{.82\linewidth}{.3pt}\par\vspace{1.45mm}
+      \checkbox\enspace\rule{.82\linewidth}{.3pt}\par\vspace{1.45mm}
+      \checkbox\enspace\rule{.82\linewidth}{.3pt}}
+    \end{minipage}
+
+    \vfill
+    {\color{TechAccent}\bfseries\scriptsize NOTA RÁPIDA}\quad
+    {\color{TechMuted}\ttfamily\scriptsize // capture antes que escape}
+    \linhaanotacao
+    \vspace{-1mm}
+    {\color{TechMuted}\ttfamily\scriptsize #4> }\rule{.78\linewidth}{.3pt}
+  \end{minipage}
+}
+
+\newcommand{\separadordias}{%
+  \vspace{1.5mm}\par
+  \begin{center}
+    \color{TechLight}\rule{.38\linewidth}{.45pt}\hspace{2mm}%
+    \color{TechMuted}\ttfamily\scriptsize \{ nextDay(); \}\hspace{2mm}%
+    \color{TechLight}\rule{.38\linewidth}{.45pt}
+  \end{center}
+  \vspace{1mm}
+}
+
+\newcommand{\tituloplanejamento}[2]{%
+  {\color{TechNavy}\fontsize{23}{25}\selectfont\bfseries #1}\par
+  \vspace{1mm}
+  {\color{TechMuted}\ttfamily\small #2}\par
+  \vspace{3mm}
+  {\color{TechAccent}\rule{16mm}{1pt}}\par
+  \vspace{6mm}
+}
+
+\newcommand{\linhaplanejamento}[1]{%
+  {\color{TechMuted}\scriptsize\bfseries #1}\par
+  \vspace{1.2mm}\rule{\linewidth}{.35pt}\par\vspace{4mm}
+}
+
+\newcommand{\paginaplanejamento}[3]{%
+  \thispagestyle{empty}
+  \vspace*{5mm}
+  \tituloplanejamento{#1}{#2}
+  #3
+  \vfill
+  {\color{TechLight}\rule{\linewidth}{.4pt}}\par
+  \vspace{1mm}
+  {\color{TechMuted}\ttfamily\scriptsize referência pessoal • 2026}
+  \clearpage
+}
+
+\begin{document}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[TechPaper] (current page.south west) rectangle (current page.north east);
+  \fill[TechAccent] ([xshift=16mm]current page.north west)
+    rectangle ([xshift=18mm,yshift=-6mm]current page.north west);
+  \draw[TechLight,line width=.4pt]
+    ([xshift=16mm,yshift=-18mm]current page.north west)
+    -- ([xshift=-13mm,yshift=-18mm]current page.north east);
+  \draw[TechLight,line width=.4pt]
+    ([xshift=16mm,yshift=17mm]current page.south west)
+    -- ([xshift=-13mm,yshift=17mm]current page.south east);
+  \node[rotate=90,anchor=south,text=TechLight,
+    font=\fontsize{42}{42}\selectfont\bfseries]
+    at ([xshift=-7mm]current page.east) {2026};
+\end{tikzpicture}
+\vspace*{28mm}
+{\color{TechMuted}\ttfamily\small ./planejar --ano 2026}\par
+\vspace{12mm}
+{\color{TechNavy}\fontsize{38}{40}\selectfont\bfseries AGENDA\par TECH}\par
+\vspace{6mm}
+{\color{TechAccent}\rule{18mm}{1.1pt}}\par
+\vspace{5mm}
+{\color{TechMuted}\large julho — dezembro}\par
+\vfill
+{\color{TechNavy}\ttfamily\small um dia de cada vez.}\par
+\vspace{20mm}
+{\color{TechMuted}\small\ttfamily nome: \rule{61mm}{.4pt}}\par
+\vspace{13mm}
+\clearpage
+
+\thispagestyle{empty}
+\vspace*{9mm}
+{\color{TechNavy}\Huge\bfseries System setup}\par
+\vspace{2mm}{\color{TechMuted}\ttfamily\small configure sua agenda antes de iniciar}\par
+\vspace{7mm}
+{\color{TechAccent}\bfseries IDENTIFICAÇÃO}\par
+\vspace{3mm}
+Nome \rule{88mm}{.4pt}\par\vspace{5mm}
+Contato \rule{82mm}{.4pt}\par\vspace{8mm}
+{\color{TechAccent}\bfseries OBJETIVOS PARA O SEMESTRE}\par
+\vspace{2mm}
+\foreach \n in {1,...,6}{\checkbox\enspace\rule{100mm}{.35pt}\par\vspace{4mm}}
+\vspace{3mm}
+{\color{TechAccent}\bfseries PROJETOS EM EXECUÇÃO}\par
+\vspace{2mm}
+\foreach \n in {1,...,5}{\texttt{[\n]} \rule{95mm}{.35pt}\par\vspace{4mm}}
+\vfill
+{\color{TechMuted}\ttfamily\scriptsize // margens espelhadas: área interna protegida para encadernação}
+\clearpage
+
+\paginaplanejamento{Planejamento financeiro}{visão geral • julho a dezembro}{%
+  {\color{TechAccent}\bfseries\scriptsize METAS DO SEMESTRE}\par\vspace{2mm}
+  \foreach \n in {1,...,4}{\checkbox\enspace\rule{.91\linewidth}{.35pt}\par\vspace{4mm}}
+  \vspace{2mm}
+  {\color{TechAccent}\bfseries\scriptsize RESUMO MENSAL}\par\vspace{3mm}
+  {\scriptsize
+  \begin{tabular}{@{}p{20mm}p{25mm}p{25mm}p{25mm}@{}}
+    \color{TechMuted}\bfseries MÊS & \color{TechMuted}\bfseries RECEITAS &
+    \color{TechMuted}\bfseries DESPESAS & \color{TechMuted}\bfseries SALDO \\
+    \hline
+    julho & & & \\[5.5mm]\hline
+    agosto & & & \\[5.5mm]\hline
+    setembro & & & \\[5.5mm]\hline
+    outubro & & & \\[5.5mm]\hline
+    novembro & & & \\[5.5mm]\hline
+    dezembro & & & \\[5.5mm]\hline
+  \end{tabular}}\par
+  \vspace{7mm}
+  \linhaplanejamento{RESERVA / INVESTIMENTOS}
+  \linhaplanejamento{PRÓXIMA DECISÃO FINANCEIRA}
+}
+
+\paginaplanejamento{Pagamentos e assinaturas}{controle de vencimentos recorrentes}{%
+  {\scriptsize
+  \begin{tabular}{@{}p{39mm}p{18mm}p{23mm}p{12mm}@{}}
+    \color{TechMuted}\bfseries ITEM & \color{TechMuted}\bfseries DIA &
+    \color{TechMuted}\bfseries VALOR & \color{TechMuted}\bfseries OK \\
+    \hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+    & & & \checkbox \\[5mm]\hline
+  \end{tabular}}\par
+  \vspace{5mm}
+  \linhaplanejamento{ASSINATURAS A REVISAR OU CANCELAR}
+  \linhaplanejamento{OBSERVAÇÕES}
+}
+
+\paginaplanejamento{Consultas e cuidados}{agenda de saúde e acompanhamento}{%
+  {\scriptsize
+  \begin{tabular}{@{}p{20mm}p{27mm}p{43mm}@{}}
+    \color{TechMuted}\bfseries DATA & \color{TechMuted}\bfseries PROFISSIONAL &
+    \color{TechMuted}\bfseries LOCAL / CONTATO \\
+    \hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+  \end{tabular}}\par
+  \vspace{7mm}
+  \linhaplanejamento{EXAMES / RETORNOS}
+  \linhaplanejamento{MEDICAÇÕES E ORIENTAÇÕES IMPORTANTES}
+  \linhaplanejamento{ANOTAÇÕES PARA A PRÓXIMA CONSULTA}
+}
+
+\paginaplanejamento{Acessos importantes}{contas • recuperação • referência segura}{%
+  {\color{TechMuted}\scriptsize Registre uma dica ou a localização da senha; evite anotar a senha completa.}\par
+  \vspace{5mm}
+  {\scriptsize
+  \begin{tabular}{@{}p{27mm}p{30mm}p{37mm}@{}}
+    \color{TechMuted}\bfseries SERVIÇO & \color{TechMuted}\bfseries USUÁRIO &
+    \color{TechMuted}\bfseries DICA / RECUPERAÇÃO \\
+    \hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+    & & \\[7mm]\hline
+  \end{tabular}}\par
+  \vspace{6mm}
+  \linhaplanejamento{CONTATO OU E-MAIL DE RECUPERAÇÃO}
+}
+
+\paginaplanejamento{Contatos importantes}{pessoas e serviços de referência}{%
+  {\scriptsize
+  \begin{tabular}{@{}p{31mm}p{29mm}p{34mm}@{}}
+    \color{TechMuted}\bfseries NOME / SERVIÇO & \color{TechMuted}\bfseries TELEFONE &
+    \color{TechMuted}\bfseries OBSERVAÇÃO \\
+    \hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+    & & \\[6.5mm]\hline
+  \end{tabular}}\par
+}
+
+\paginaplanejamento{Datas e referências}{lembretes que não podem escapar}{%
+  {\color{TechAccent}\bfseries\scriptsize DATAS IMPORTANTES}\par\vspace{3mm}
+  {\scriptsize
+  \begin{tabular}{@{}p{21mm}p{73mm}@{}}
+    \color{TechMuted}\bfseries DATA & \color{TechMuted}\bfseries EVENTO / PRAZO \\
+    \hline
+    & \\[6mm]\hline
+    & \\[6mm]\hline
+    & \\[6mm]\hline
+    & \\[6mm]\hline
+    & \\[6mm]\hline
+    & \\[6mm]\hline
+    & \\[6mm]\hline
+    & \\[6mm]\hline
+  \end{tabular}}\par
+  \vspace{7mm}
+  {\color{TechAccent}\bfseries\scriptsize ANOTAÇÕES GERAIS}\par\vspace{1mm}
+  \foreach \n in {1,...,8}{\linhaanotacao}
+}
+
+\directlua{dofile("agenda.lua")}
+
+\end{document}

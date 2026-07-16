@@ -1,0 +1,168 @@
+\InputIfFileExists{config.tex}{}{}
+\providecommand{\AgendaAno}{2026}
+\providecommand{\AgendaPeriodo}{julho a dezembro}
+\providecommand{\AgendaPapel}{a5paper}
+\providecommand{\MargemInterna}{22mm}
+\providecommand{\MargemExterna}{12mm}
+\providecommand{\MargemSuperior}{11mm}
+\providecommand{\MargemInferior}{13mm}
+\providecommand{\AlturaDia}{80mm}
+\providecommand{\FundoDia}{78mm}
+\providecommand{\LarguraFloralDia}{27mm}
+\providecommand{\PosicaoFloralDia}{-46mm}
+\providecommand{\NumeroPautas}{9}
+\providecommand{\OpacidadeFloralDia}{.94}
+\providecommand{\ArquivoFloralDia}{images/floral-canto.png}
+\providecommand{\TamanhoMes}{22}
+\providecommand{\EntrelinhaMes}{23}
+\providecommand{\TamanhoData}{18}
+\providecommand{\EntrelinhaData}{18}
+\providecommand{\TamanhoSemana}{9}
+\providecommand{\EntrelinhaSemana}{11}
+\providecommand{\CorBlush}{DCEEF2}
+\providecommand{\CorRosa}{82B7C4}
+\providecommand{\CorRosaEscuro}{315F70}
+\providecommand{\CorSalvia}{719B8B}
+\providecommand{\CorFolha}{416B5A}
+\providecommand{\CorDourado}{B89A58}
+\providecommand{\CorTaupe}{596A70}
+\providecommand{\CorLinha}{BFD4D9}
+
+\documentclass[10pt,\AgendaPapel,twoside]{article}
+
+\usepackage[\AgendaPapel,inner=\MargemInterna,outer=\MargemExterna,
+  top=\MargemSuperior,bottom=\MargemInferior,headsep=3mm,footskip=7mm]{geometry}
+\usepackage[brazil]{babel}
+\usepackage{fontspec}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{hyperref}
+
+\setmainfont{TeX Gyre Pagella}
+\IfFontExistsTF{TeX Gyre Chorus}{\newfontfamily\floralfonte{TeX Gyre Chorus}}{\newfontfamily\floralfonte{TeX Gyre Pagella Italic}}
+\setlength{\parindent}{0pt}
+
+\definecolor{Marfim}{HTML}{FFFCF8}
+\definecolor{Blush}{HTML}{\CorBlush}
+\definecolor{Rosa}{HTML}{\CorRosa}
+\definecolor{RosaEscuro}{HTML}{\CorRosaEscuro}
+\definecolor{Salvia}{HTML}{\CorSalvia}
+\definecolor{Folha}{HTML}{\CorFolha}
+\definecolor{Dourado}{HTML}{\CorDourado}
+\definecolor{Taupe}{HTML}{\CorTaupe}
+\definecolor{Linha}{HTML}{\CorLinha}
+
+\pagecolor{white}
+\color{Taupe}
+\hypersetup{hidelinks,pdftitle={Agenda Floral 2026 — segundo semestre}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\color{Dourado}\scriptsize\thepage\enspace\folhinha\enspace\pageref*{LastPage}}
+
+\newcommand{\folhinha}{\tikz[baseline=-.3ex,scale=.12]{\fill[Salvia] (0,0) .. controls (1,1.1) and (2,1.1) .. (2,0) .. controls (1,-.5) and (.4,-.3) .. cycle;}}
+\newcommand{\checkbox}{\tikz[baseline=-.55ex]\draw[Rosa,line width=.45pt,rounded corners=.3pt] (0,0) rectangle (1.5mm,1.5mm);}
+
+\newcommand{\ramofloral}[1]{%
+  \begin{scope}[rotate=#1]
+    \draw[Salvia,line width=.45pt] (0,0) .. controls (7mm,1mm) and (12mm,7mm) .. (19mm,12mm);
+    \foreach \x/\y/\r in {4/1/25,8/4/-25,12/7/28,16/10/-20}{
+      \begin{scope}[shift={(\x mm,\y mm)},rotate=\r]
+        \fill[Salvia!75] (0,0) .. controls (2mm,2mm) and (4mm,1mm) .. (5mm,0) .. controls (3mm,-1mm) and (1mm,-1mm) .. cycle;
+      \end{scope}}
+    \begin{scope}[shift={(19mm,12mm)}]
+      \foreach \a in {0,60,...,300}{\fill[Blush!85,rotate=\a] (0,0) ellipse (3.5mm and 1.8mm);}
+      \fill[Rosa!75] (0,0) circle (1.5mm);
+    \end{scope}
+  \end{scope}}
+
+\newcommand{\ornamentocantos}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \begin{scope}[shift={([xshift=22mm,yshift=-14mm]current page.north west)}]\ramofloral{205}\end{scope}
+    \begin{scope}[shift={([xshift=-13mm,yshift=14mm]current page.south east)}]\ramofloral{25}\end{scope}
+  \end{tikzpicture}}
+
+\newcommand{\linhas}[1]{\foreach \n in {1,...,#1}{\rule{\linewidth}{.35pt}\par\vspace{2.45mm}}}
+
+\newcommand{\blocodia}[4]{%
+  \begin{minipage}[t][\AlturaDia][t]{\linewidth}
+    \begin{tikzpicture}[remember picture,overlay]
+      \ifodd\value{page}
+        \node[anchor=east,inner sep=0pt,opacity=\OpacidadeFloralDia]
+          at (\linewidth,\PosicaoFloralDia)
+          {\includegraphics[width=\LarguraFloralDia]{\ArquivoFloralDia}};
+      \else
+        \node[anchor=west,inner sep=0pt,opacity=\OpacidadeFloralDia]
+          at (0,\PosicaoFloralDia)
+          {\reflectbox{\includegraphics[width=\LarguraFloralDia]{\ArquivoFloralDia}}};
+      \fi
+    \end{tikzpicture}
+    \vspace{-1mm}
+    \begin{minipage}[t]{.66\linewidth}
+      {\floralfonte\color{RosaEscuro}\fontsize{\TamanhoMes}{\EntrelinhaMes}\selectfont #3}\par
+      {\color{Salvia}\fontsize{\TamanhoSemana}{\EntrelinhaSemana}\selectfont #2}
+    \end{minipage}%
+    \begin{minipage}[t]{.32\linewidth}\raggedleft
+      \tikz[baseline=-1ex]\node[fill=Dourado!72,rounded corners=.8mm,text=white,
+        font=\bfseries\fontsize{\TamanhoData}{\EntrelinhaData}\selectfont,inner sep=1.5mm]{#1};
+    \end{minipage}\par
+    \vspace{2.8mm}
+    {\color{Dourado}\rule{\linewidth}{.6pt}}
+
+    \vspace{1.3mm}
+    {\color{RosaEscuro}\bfseries\scriptsize PLANOS E COMPROMISSOS}\par\vspace{1mm}
+    {\color{Linha}\linhas{\NumeroPautas}}
+    \vfill
+    {\color{RosaEscuro}\floralfonte\small Importante:\hspace{2mm}%
+      \color{Dourado}\rule{.72\linewidth}{.35pt}}
+  \end{minipage}
+}
+
+\newcommand{\entredias}{%
+  \vspace{1.5mm}\par\begin{center}
+  \color{Linha}\rule{.38\linewidth}{.4pt}\quad\folhinha\quad\rule{.38\linewidth}{.4pt}
+  \end{center}\vspace{1mm}}
+
+\begin{document}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[Marfim] (current page.south west) rectangle (current page.north east);
+  \fill[Blush!32] ([xshift=10mm,yshift=-10mm]current page.north west)
+    rectangle ([xshift=-10mm,yshift=10mm]current page.south east);
+  \draw[Dourado,line width=.8pt] ([xshift=14mm,yshift=-14mm]current page.north west)
+    rectangle ([xshift=-14mm,yshift=14mm]current page.south east);
+  \node[anchor=north west,inner sep=0pt] at ([xshift=8mm,yshift=-8mm]current page.north west)
+    {\includegraphics[width=63mm,angle=-90]{images/floral-canto.png}};
+  \node[anchor=south east,inner sep=0pt] at ([xshift=-8mm,yshift=8mm]current page.south east)
+    {\includegraphics[width=76mm]{images/floral-canto.png}};
+\end{tikzpicture}
+\vspace*{50mm}
+\begin{center}
+  {\floralfonte\color{RosaEscuro}\fontsize{35}{40}\selectfont Minha Agenda}\par
+  \vspace{4mm}{\color{Dourado}\Large \AgendaAno}\par
+  \vspace{3mm}{\color{Salvia}\large \AgendaPeriodo}\par
+  \vspace{15mm}{\color{RosaEscuro}\small Nome}\par\vspace{1mm}
+  {\color{Dourado}\rule{72mm}{.45pt}}
+\end{center}
+\clearpage
+
+\thispagestyle{empty}
+\ornamentocantos
+\vspace*{12mm}
+{\floralfonte\color{RosaEscuro}\Huge Florescer}\par
+{\color{Salvia}\small planos, sonhos e intenções para o semestre}\par
+\vspace{6mm}{\color{Dourado}\rule{\linewidth}{.6pt}}\par\vspace{7mm}
+{\color{RosaEscuro}\bfseries MINHAS INTENÇÕES}\par\vspace{3mm}\linhas{7}
+\vspace{4mm}{\color{RosaEscuro}\bfseries SONHOS QUE QUERO CULTIVAR}\par\vspace{3mm}\linhas{7}
+\vspace{4mm}{\color{RosaEscuro}\bfseries CUIDAR DE MIM}\par\vspace{3mm}
+\foreach \n in {1,...,5}{\checkbox\enspace\rule{.88\linewidth}{.35pt}\par\vspace{4mm}}
+\clearpage
+
+\thispagestyle{empty}
+\directlua{dofile("agenda.lua")}
+\end{document}
