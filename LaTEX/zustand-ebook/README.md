@@ -9,6 +9,9 @@ A arquitetura completa está registrada em `ARQUITETURA.md`. Os capítulos 1 a 1
 estão escritos e ativos em `main.tex`; os demais permanecem como marcadores
 editoriais e serão incluídos progressivamente.
 
+O diagnóstico da geração atual do PDF e a lista de trabalho restante estão em
+`PENDENCIAS.md`.
+
 ## Formato editorial obrigatório
 
 O livro usa ISO A5 real: **148 × 210 mm**, em páginas espelhadas. A configuração
